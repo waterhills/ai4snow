@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>GLACIAL LAB | Precision Alpine Intelligence</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "outline-variant": "#3b4861",
+                        "surface-container-low": "#02132b",
+                        "on-error-container": "#ffa8a3",
+                        "on-error": "#490006",
+                        "on-primary-fixed-variant": "#004c5e",
+                        "primary-fixed": "#00d2ff",
+                        "on-surface": "#dbe6ff",
+                        "surface-bright": "#152c4e",
+                        "surface-container-lowest": "#000000",
+                        "on-surface-variant": "#9eabc8",
+                        "on-primary-container": "#004253",
+                        "error-dim": "#d7383b",
+                        "secondary-container": "#00677d",
+                        "primary-container": "#00d2ff",
+                        "inverse-primary": "#00687f",
+                        "background": "#010e24",
+                        "on-tertiary-container": "#f8f1ff",
+                        "error-container": "#9f0519",
+                        "secondary-fixed-dim": "#59d2f5",
+                        "surface-variant": "#102645",
+                        "inverse-surface": "#f9f9ff",
+                        "secondary-dim": "#52cdef",
+                        "inverse-on-surface": "#48556e",
+                        "on-secondary-fixed": "#003a47",
+                        "secondary-fixed": "#78dfff",
+                        "primary": "#72dcff",
+                        "tertiary-fixed-dim": "#b190ff",
+                        "tertiary-container": "#7000ff",
+                        "tertiary-fixed": "#bda1ff",
+                        "primary-fixed-dim": "#00c3ed",
+                        "on-secondary-container": "#edfaff",
+                        "on-background": "#dbe6ff",
+                        "error": "#ff716c",
+                        "on-tertiary-fixed": "#1f0052",
+                        "secondary": "#63dbfe",
+                        "surface-tint": "#72dcff",
+                        "outline": "#687690",
+                        "on-secondary-fixed-variant": "#00586b",
+                        "surface": "#010e24",
+                        "tertiary": "#ac89ff",
+                        "on-primary-fixed": "#002c38",
+                        "primary-dim": "#00c3ed",
+                        "on-tertiary": "#290067",
+                        "surface-container": "#061934",
+                        "surface-dim": "#010e24",
+                        "surface-container-highest": "#102645",
+                        "on-primary": "#004c5e",
+                        "tertiary-dim": "#874cff",
+                        "on-secondary": "#004b5b",
+                        "surface-container-high": "#0b203d",
+                        "on-tertiary-fixed-variant": "#4700a7"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline": ["Space Grotesk"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .glass-card {
+            background: rgba(16, 38, 69, 0.4);
+            backdrop-filter: blur(20px);
+        }
+        .neon-glow {
+            box-shadow: 0 0 20px rgba(114, 220, 255, 0.4);
+        }
+        .neon-glow:hover {
+            box-shadow: 0 0 35px rgba(114, 220, 255, 0.6);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body selection:bg-primary/30 selection:text-primary">
+<nav class="fixed top-0 w-full z-50 bg-[#010e24]/40 backdrop-blur-xl border-b border-[#72dcff]/15 shadow-[0_0_20px_rgba(114,220,255,0.05)]">
+<div class="flex justify-between items-center px-8 h-20 w-full max-w-screen-2xl mx-auto font-['Space_Grotesk'] tracking-tight">
+<div class="text-2xl font-bold tracking-tighter text-[#72dcff] uppercase">GLACIAL LAB</div>
+<div class="hidden md:flex gap-8 items-center">
+<a class="text-[#72dcff] border-b-2 border-[#72dcff] pb-1" href="#">Home</a>
+<a class="text-[#dbe6ff]/70 hover:text-[#72dcff] transition-colors" href="#">Upload</a>
+<a class="text-[#dbe6ff]/70 hover:text-[#72dcff] transition-colors" href="#">Results</a>
+<a class="text-[#dbe6ff]/70 hover:text-[#72dcff] transition-colors" href="#">Pricing</a>
+</div>
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-[#72dcff] hover:bg-[#72dcff]/10 hover:shadow-[0_0_15px_rgba(114,220,255,0.3)] transition-all duration-300 p-2 rounded-lg active:scale-95">account_circle</button>
+</div>
+</div>
+</nav>
+<main>
+<section class="relative min-h-screen flex items-center pt-20 overflow-hidden">
+<div class="absolute inset-0 z-0">
+<img class="w-full h-full object-cover opacity-60 mix-blend-luminosity" data-alt="Cinematic high-angle shot of a professional skier carving through deep powder with digital blueprint overlays and holographic data telemetry interfaces." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAWaZOF8bBNZHf-qPIvzDtbrV3lQUn4cp-IRNBAc-UR12VjAmSr0URLgLy8jU_w-Xe1bhZVwoqhY6ZwoDFq169nVxWGe71fhOgXRajClQggP84AeHqTooVo8ZVlEk3kDVWJV_mEkc9AffMHz-rH7_d47gghg6_2mPZDYWs8eMLLsq-gWThQzuDUyH-F7Y0TFAJmOuBa8oDvNrMWrDzEBMxFNTTiXBfft25GFaNkIWeyGPBLmw_D0XX1TmHY-EjyrJUFWy7bBAco7Co"/>
+<div class="absolute inset-0 bg-gradient-to-r from-background via-background/80 to-transparent"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent"></div>
+</div>
+<div class="relative z-10 w-full max-w-screen-2xl mx-auto px-8 lg:px-12">
+<div class="max-w-3xl">
+<div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-surface-container-highest border border-primary/20 mb-8">
+<span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+<span class="text-xs font-label uppercase tracking-widest text-primary">System Online: Live Telemetry</span>
+</div>
+<h1 class="font-headline text-5xl md:text-7xl font-bold text-on-surface tracking-tighter leading-[0.9] mb-8">
+                        Precision Alpine <span class="text-primary italic">Intelligence</span>: Master the Slopes with Data.
+                    </h1>
+<p class="text-on-surface-variant text-lg md:text-xl max-w-xl mb-12 font-light leading-relaxed">
+                        Harness laboratory-grade pressure mapping to optimize every turn. Our AI decodes your kinetic signature in real-time, delivering professional coaching for elite performance.
+                    </p>
+<div class="flex flex-wrap gap-6">
+<button class="bg-gradient-to-br from-primary to-primary-container text-on-primary-fixed font-bold px-10 py-5 rounded-xl text-lg uppercase tracking-wider neon-glow active:scale-95 transition-all">
+                            Get Started
+                        </button>
+<button class="glass-card border border-outline-variant/30 text-on-surface px-10 py-5 rounded-xl text-lg uppercase tracking-wider hover:bg-surface-variant transition-colors active:scale-95">
+                            View Demo
+                        </button>
+</div>
+</div>
+</div>
+<div class="absolute bottom-12 right-8 hidden lg:block w-96">
+<div class="glass-card p-6 rounded-xl border border-primary/10">
+<div class="flex justify-between items-end mb-4">
+<div>
+<p class="text-[10px] font-label text-on-surface-variant uppercase tracking-widest">Active Sensor</p>
+<h3 class="text-primary font-headline font-bold text-xl uppercase">Pressure Map L1</h3>
+</div>
+<span class="text-primary-dim text-xs font-mono">0.02ms Latency</span>
+</div>
+<div class="space-y-4">
+<div class="h-24 w-full bg-surface-container-lowest rounded overflow-hidden relative">
+<div class="absolute inset-0 bg-gradient-to-t from-primary/20 to-transparent"></div>
+<div class="flex items-end justify-between h-full px-2 pb-1 gap-1">
+<div class="w-2 bg-primary/40 h-[40%]"></div>
+<div class="w-2 bg-primary/60 h-[65%]"></div>
+<div class="w-2 bg-primary/80 h-[90%]"></div>
+<div class="w-2 bg-primary h-[75%]"></div>
+<div class="w-2 bg-tertiary h-[55%]"></div>
+<div class="w-2 bg-tertiary/60 h-[30%]"></div>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="p-3 bg-surface-container-high rounded border border-outline-variant/20">
+<p class="text-[10px] text-on-surface-variant uppercase">Edge Angle</p>
+<p class="text-lg font-headline text-on-surface">42.5°</p>
+</div>
+<div class="p-3 bg-surface-container-high rounded border border-outline-variant/20">
+<p class="text-[10px] text-on-surface-variant uppercase">Force PSI</p>
+<p class="text-lg font-headline text-on-surface">1,240</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section class="py-32 bg-background">
+<div class="max-w-screen-2xl mx-auto px-8">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-16">
+<div class="group">
+<div class="w-16 h-16 rounded-xl bg-surface-container-high flex items-center justify-center mb-8 border border-primary/10 group-hover:border-primary transition-colors">
+<span class="material-symbols-outlined text-primary text-3xl">grid_view</span>
+</div>
+<h3 class="font-headline text-2xl font-bold mb-4 uppercase tracking-tight">Real-time Pressure Mapping</h3>
+<p class="text-on-surface-variant leading-relaxed">High-density sensor integration across your boot liner captures 1,000 data points per second, visualizing the exact distribution of your kinetic energy.</p>
+</div>
+<div class="group">
+<div class="w-16 h-16 rounded-xl bg-surface-container-high flex items-center justify-center mb-8 border border-tertiary/10 group-hover:border-tertiary transition-colors">
+<span class="material-symbols-outlined text-tertiary text-3xl">psychology</span>
+</div>
+<h3 class="font-headline text-2xl font-bold mb-4 uppercase tracking-tight">AI-Driven Technique Analysis</h3>
+<p class="text-on-surface-variant leading-relaxed">Our neural networks compare your data against elite alpine racers, providing instant corrections for weight distribution, edging, and transition timing.</p>
+</div>
+<div class="group">
+<div class="w-16 h-16 rounded-xl bg-surface-container-high flex items-center justify-center mb-8 border border-secondary/10 group-hover:border-secondary transition-colors">
+<span class="material-symbols-outlined text-secondary text-3xl">cloud_sync</span>
+</div>
+<h3 class="font-headline text-2xl font-bold mb-4 uppercase tracking-tight">Cloud-Sync Performance Tracking</h3>
+<p class="text-on-surface-variant leading-relaxed">Archive every session in the Glacial Lab cloud. Track season-long progress with multi-metric dashboards and predictive skill forecasting.</p>
+</div>
+</div>
+</div>
+</section>
+<section class="py-32 relative overflow-hidden">
+<div class="absolute inset-0 bg-surface-container-low opacity-50"></div>
+<div class="max-w-screen-2xl mx-auto px-8 relative z-10">
+<div class="mb-24">
+<h2 class="font-headline text-4xl md:text-5xl font-bold tracking-tighter uppercase mb-4">How it Works</h2>
+<div class="h-1 w-24 bg-primary"></div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-12 gap-12 items-center">
+<div class="md:col-span-7 grid grid-cols-1 gap-8">
+<div class="flex gap-8 group">
+<div class="flex-shrink-0 w-12 h-12 rounded-full border border-primary flex items-center justify-center text-primary font-headline font-bold text-xl">1</div>
+<div>
+<h4 class="text-xl font-bold uppercase mb-2 group-hover:text-primary transition-colors">Connect Sensors</h4>
+<p class="text-on-surface-variant">Insert the Glacial Lab smart-liners into any standard ski boot and sync via low-latency Bluetooth to your mobile hub.</p>
+</div>
+</div>
+<div class="flex gap-8 group">
+<div class="flex-shrink-0 w-12 h-12 rounded-full border border-primary flex items-center justify-center text-primary font-headline font-bold text-xl">2</div>
+<div>
+<h4 class="text-xl font-bold uppercase mb-2 group-hover:text-primary transition-colors">Capture Descent</h4>
+<p class="text-on-surface-variant">The system automatically detects your run. Sensors record spatial orientation and multi-point pressure data during every carve.</p>
+</div>
+</div>
+<div class="flex gap-8 group">
+<div class="flex-shrink-0 w-12 h-12 rounded-full border border-primary flex items-center justify-center text-primary font-headline font-bold text-xl">3</div>
+<div>
+<h4 class="text-xl font-bold uppercase mb-2 group-hover:text-primary transition-colors">Analyze &amp; Improve</h4>
+<p class="text-on-surface-variant">Review a complete 3D replay of your performance with heatmap overlays and AI-generated drills to target your specific weaknesses.</p>
+</div>
+</div>
+</div>
+<div class="md:col-span-5">
+<div class="relative aspect-square rounded-2xl overflow-hidden border border-outline-variant/30 glass-card p-4">
+<img class="w-full h-full object-cover rounded-xl opacity-80 shadow-2xl" data-alt="A top-down view of a digital ski boot schematic showing pressure heatmaps in bright cyan and purple on a technical laboratory grid background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCG8fc2FDYz3wgEtFIyPFhhX1zKyvSuXiiAqdWSXqWydY1lvPmt-AtFEWTLlpxaiAPqOneCsDr3rLJovYyIazfy-iWhFBPW6KthCJA6-zIyThGOaa0hNlstzpmcKHZrPGYiLlkSUqxbX7JeMsG8cXsEFQ9l_5vQ8dStn2zVYpRF_bwFYdK0h729d2E3DRXl3Of1ePu-R98DjXMJVjjG6trpblWoJldmrYP8-Bu8LGZVYfvb683eBhbtWRAx5clKPNj-yz4NNMy8DwA"/>
+<div class="absolute inset-0 bg-gradient-to-tr from-primary/10 via-transparent to-tertiary/10 pointer-events-none"></div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section class="py-40">
+<div class="max-w-4xl mx-auto text-center px-8">
+<div class="inline-block glass-card p-12 rounded-3xl border border-primary/20 relative overflow-hidden group">
+<div class="absolute -top-24 -right-24 w-48 h-48 bg-primary/20 blur-[100px] group-hover:bg-primary/30 transition-all"></div>
+<h2 class="font-headline text-4xl md:text-6xl font-bold tracking-tight mb-8">Ready to Elevate Your <span class="text-primary italic">Alpine Signature</span>?</h2>
+<p class="text-on-surface-variant text-xl mb-12 max-w-2xl mx-auto font-light">Join the elite network of data-driven athletes transforming the mountains.</p>
+<button class="bg-gradient-to-r from-primary to-primary-container text-on-primary-fixed font-bold px-12 py-6 rounded-xl text-xl uppercase tracking-widest neon-glow active:scale-95 transition-all">
+                        Deploy System Now
+                    </button>
+</div>
+</div>
+</section>
+</main>
+<footer class="bg-[#010e24] w-full py-12 mt-20 border-t border-[#72dcff]/10">
+<div class="flex flex-col md:flex-row justify-between items-center px-12 gap-8 w-full max-w-screen-2xl mx-auto">
+<div class="font-['Inter'] text-sm uppercase tracking-widest text-[#dbe6ff]/40">
+                © 2024 PRECISION ALPINE LABS. ALL RIGHTS RESERVED.
+            </div>
+<div class="flex flex-wrap justify-center gap-8 font-['Inter'] text-sm uppercase tracking-widest">
+<a class="text-[#dbe6ff]/40 hover:text-[#72dcff] hover:underline decoration-[#72dcff] underline-offset-4 transition-opacity duration-200" href="#">Technical Support</a>
+<a class="text-[#dbe6ff]/40 hover:text-[#72dcff] hover:underline decoration-[#72dcff] underline-offset-4 transition-opacity duration-200" href="#">Privacy Protocol</a>
+<a class="text-[#dbe6ff]/40 hover:text-[#72dcff] hover:underline decoration-[#72dcff] underline-offset-4 transition-opacity duration-200" href="#">System Status</a>
+<a class="text-[#dbe6ff]/40 hover:text-[#72dcff] hover:underline decoration-[#72dcff] underline-offset-4 transition-opacity duration-200" href="#">Terms of Service</a>
+</div>
+</div>
+</footer>
+</body></html>

@@ -1,0 +1,440 @@
+# 滑雪压力识别 SaaS 平台 — 实施方案 v2
+
+## 架构变更说明
+
+v1 方案使用 frp 内网穿透，存在隧道不稳定的风险。v2 改用**消息队列（生产者-消费者）模式**：
+- 云服务器发布任务到 Redis 队列（生产者）
+- Mac Mini 主动连接 Redis 拉取任务（消费者）
+- 所有连接都是 Mac Mini **出站**的，NAT 完全不是问题，无需内网穿透
+
+---
+
+## 系统架构总览
+
+```mermaid
+graph TB
+    subgraph 用户端
+        Browser[用户浏览器]
+        AdminUser[管理员浏览器]
+    end
+
+    subgraph 云服务器 2核
+        Nginx[Nginx 反向代理<br/>HTTPS]
+        Client[客户端前端<br/>React + Vite<br/>静态文件]
+        Admin[管理后台前端<br/>React + Vite<br/>静态文件]
+        API[后端 API<br/>Node.js + Express]
+        DB[(SQLite / PostgreSQL)]
+        Redis[(Redis<br/>消息队列)]
+        OSS[云对象存储<br/>阿里云OSS/R2]
+    end
+
+    subgraph Mac Mini 内网
+        Worker[队列消费者 Worker<br/>Python]
+        YOLO[YOLO 推理引擎<br/>MPS 加速]
+    end
+
+    Browser -->|HTTPS| Nginx
+    AdminUser -->|HTTPS| Nginx
+    Nginx -->|/| Client
+    Nginx -->|/admin| Admin
+    Nginx -->|/api| API
+    API --> DB
+    API -->|发布任务| Redis
+    API --> OSS
+
+    Worker -->|主动外连 拉取任务| Redis
+    Worker --> OSS
+    Worker --> YOLO
+    Worker -->|回调通知| API
+```
+
+### 数据流
+
+```
+1. 用户上传视频/图片 → 云服务器 API
+2. API 将文件上传到 OSS，在数据库创建任务记录
+3. API 将任务消息发布到 Redis 队列
+4. Mac Mini Worker 主动从 Redis 拉取任务
+5. Worker 从 OSS 下载文件 → YOLO 推理
+6. Worker 将结果上传到 OSS
+7. Worker 通过 API 回调通知"任务完成"
+8. 用户刷新页面/收到通知 → 查看分析报告
+```
+
+---
+
+## 项目结构（前后端分离 Monorepo）
+
+```
+g:\myproject\skating\skate_web\
+├── client/                     # 📱 客户端前端 (React + Vite + TypeScript)
+│   ├── src/
+│   │   ├── pages/              # 页面组件
+│   │   │   ├── Home.tsx        # 首页（产品介绍、定价）
+│   │   │   ├── Upload.tsx      # 上传分析页
+│   │   │   ├── Result.tsx      # 结果查看页
+│   │   │   ├── Dashboard.tsx   # 用户中心（历史记录、积分）
+│   │   │   ├── Pricing.tsx     # 定价套餐页
+│   │   │   ├── Login.tsx       # 登录
+│   │   │   └── Register.tsx    # 注册
+│   │   ├── components/         # 可复用 UI 组件
+│   │   ├── hooks/              # 自定义 Hooks
+│   │   ├── services/           # API 请求封装
+│   │   ├── stores/             # 状态管理 (Zustand)
+│   │   ├── styles/             # 全局样式
+│   │   ├── App.tsx
+│   │   └── main.tsx
+│   ├── index.html
+│   ├── vite.config.ts
+│   └── package.json
+│
+├── admin/                      # 🔧 管理后台前端 (React + Vite + TypeScript)
+│   ├── src/
+│   │   ├── pages/
+│   │   │   ├── Dashboard.tsx   # 数据概览（总用户、总任务、收入）
+│   │   │   ├── Users.tsx       # 用户管理（查看、积分调整）
+│   │   │   ├── Tasks.tsx       # 任务管理（查看、重试、删除）
+│   │   │   ├── Credits.tsx     # 积分管理（充值记录、手动充值）
+│   │   │   ├── Settings.tsx    # 系统设置
+│   │   │   └── Login.tsx       # 管理员登录
+│   │   ├── components/
+│   │   ├── services/
+│   │   ├── App.tsx
+│   │   └── main.tsx
+│   ├── index.html
+│   ├── vite.config.ts
+│   └── package.json
+│
+├── server/                     # ⚙️ 后端 API (Node.js + Express + TypeScript)
+│   ├── src/
+│   │   ├── routes/
+│   │   │   ├── auth.ts         # 认证路由 (登录/注册/JWT)
+│   │   │   ├── upload.ts       # 文件上传路由
+│   │   │   ├── task.ts         # 任务管理路由
+│   │   │   ├── user.ts         # 用户信息路由
+│   │   │   ├── payment.ts      # 支付路由
+│   │   │   └── admin.ts        # 管理后台专用 API
+│   │   ├── services/
+│   │   │   ├── queue.ts        # 消息队列服务 (BullMQ)
+│   │   │   ├── storage.ts      # 对象存储服务
+│   │   │   ├── payment.ts      # 支付服务
+│   │   │   └── notification.ts # 通知服务
+│   │   ├── models/
+│   │   │   ├── user.ts         # 用户模型
+│   │   │   ├── task.ts         # 任务模型
+│   │   │   └── payment.ts      # 支付模型
+│   │   ├── middleware/
+│   │   │   ├── auth.ts         # JWT 认证中间件
+│   │   │   ├── admin.ts        # 管理员权限中间件
+│   │   │   └── rateLimit.ts    # 限流中间件
+│   │   ├── config/
+│   │   │   └── index.ts        # 配置管理
+│   │   └── app.ts              # Express 应用入口
+│   ├── prisma/
+│   │   └── schema.prisma       # 数据库 Schema
+│   ├── tsconfig.json
+│   └── package.json
+│
+├── worker/                     # 🤖 Mac Mini 推理消费者 (Python) — 你朋友负责
+│   ├── worker.py               # 队列消费者主程序
+│   ├── inference.py            # YOLO 推理封装
+│   ├── config.py               # 配置（Redis地址、OSS密钥等）
+│   └── requirements.txt
+│
+├── shared/                     # 📦 共享类型/常量（可选）
+│   └── types.ts
+│
+├── docker-compose.yml          # 本地开发编排 (Redis等)
+├── package.json                # 根 package.json (workspace 管理)
+└── README.md
+```
+
+---
+
+## 技术栈选型
+
+| 层级 | 技术 | 说明 |
+|------|------|------|
+| **客户端前端** | React 18 + Vite + TypeScript | 轻量快速，打包为静态文件由 Nginx 托管 |
+| **管理后台前端** | React 18 + Vite + TypeScript | 独立构建，独立路由，独立鉴权 |
+| **UI 组件** | Ant Design 或 自定义 CSS | 管理后台用 Ant Design；客户端用自定义精美 UI |
+| **后端 API** | Node.js + Express + TypeScript | 统一的 API 服务，同时服务客户端和管理后台 |
+| **数据库** | SQLite (Prisma ORM) | 初期资源节约；Prisma 允许后续无缝切到 PostgreSQL |
+| **消息队列** | Redis + BullMQ | Mac Mini 主动外连拉取任务 |
+| **对象存储** | 阿里云 OSS / 腾讯云 COS | 存储用户上传文件和推理结果 |
+| **认证** | JWT (access + refresh token) | 轻量、无状态 |
+| **推理 Worker** | Python + FastAPI (可选) + YOLO | 你朋友在 Mac Mini 上实现 |
+
+---
+
+## 数据库设计 (Prisma Schema)
+
+```prisma
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  phone     String?  @unique
+  password  String                        // bcrypt 哈希
+  name      String?
+  role      Role     @default(USER)       // USER / ADMIN
+  credits   Int      @default(0)          // 剩余分析积分
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tasks     Task[]
+  payments  Payment[]
+}
+
+model Task {
+  id           String     @id @default(uuid())
+  userId       String
+  user         User       @relation(fields: [userId], references: [id])
+  status       TaskStatus @default(PENDING)
+  inputFileKey String                     // OSS 中的输入文件路径
+  resultFileKey String?                   // OSS 中的结果文件路径
+  resultJson   String?                    // 推理结果 JSON
+  errorMsg     String?                    // 失败原因
+  createdAt    DateTime   @default(now())
+  startedAt    DateTime?                  // 开始处理时间
+  completedAt  DateTime?                  // 完成时间
+}
+
+model Payment {
+  id           String        @id @default(uuid())
+  userId       String
+  user         User          @relation(fields: [userId], references: [id])
+  amount       Int                        // 金额 (分)
+  creditsAdded Int                        // 本次增加的积分
+  method       PaymentMethod              // WECHAT / ALIPAY / MANUAL
+  tradeNo      String?                    // 第三方交易号
+  status       PaymentStatus @default(PENDING)
+  remark       String?                    // 备注（手动充值时使用）
+  createdAt    DateTime      @default(now())
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum TaskStatus {
+  PENDING      // 等待处理
+  PROCESSING   // 处理中
+  COMPLETED    // 完成
+  FAILED       // 失败
+}
+
+enum PaymentMethod {
+  WECHAT
+  ALIPAY
+  MANUAL       // 管理员手动充值
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  REFUNDED
+}
+```
+
+---
+
+## API 设计
+
+### 客户端 API (`/api/v1/`)
+
+| 方法 | 路径 | 说明 | 鉴权 |
+|------|------|------|------|
+| POST | `/auth/register` | 注册 | 无 |
+| POST | `/auth/login` | 登录，返回 JWT | 无 |
+| GET | `/user/profile` | 获取当前用户信息 + 积分 | ✅ |
+| POST | `/tasks` | 上传文件并创建分析任务 | ✅ |
+| GET | `/tasks` | 获取用户的任务列表 | ✅ |
+| GET | `/tasks/:id` | 获取单个任务详情 + 结果 | ✅ |
+| GET | `/tasks/:id/status` | 轮询任务状态（轻量） | ✅ |
+
+### Worker 回调 API (`/api/internal/`)
+
+| 方法 | 路径 | 说明 | 鉴权 |
+|------|------|------|------|
+| POST | `/callback/task-complete` | Worker 通知任务完成 | API Key |
+| POST | `/callback/task-failed` | Worker 通知任务失败 | API Key |
+
+### 管理后台 API (`/api/admin/`)
+
+| 方法 | 路径 | 说明 | 鉴权 |
+|------|------|------|------|
+| GET | `/dashboard/stats` | 概览统计数据 | Admin |
+| GET | `/users` | 用户列表（分页、搜索） | Admin |
+| PATCH | `/users/:id/credits` | 调整用户积分 | Admin |
+| GET | `/tasks` | 所有任务列表 | Admin |
+| POST | `/tasks/:id/retry` | 重试失败任务 | Admin |
+| GET | `/payments` | 支付记录列表 | Admin |
+| POST | `/payments/manual` | 手动为用户充值 | Admin |
+
+---
+
+## 消息队列协议（你和朋友的接口约定）
+
+> [!IMPORTANT]
+> 这是你和朋友之间最关键的接口协议。你们只需要约定好消息格式和 Redis 地址，就可以独立开发。
+
+### 任务消息格式（发布到 Redis 队列）
+
+```json
+{
+  "taskId": "uuid-xxxx",
+  "inputFileKey": "uploads/2026/04/10/abc123.mp4",
+  "inputFileUrl": "https://your-oss.com/uploads/2026/04/10/abc123.mp4",
+  "callbackUrl": "https://your-domain.com/api/internal/callback/task-complete",
+  "createdAt": "2026-04-10T10:00:00Z"
+}
+```
+
+### Worker 完成回调格式
+
+```json
+{
+  "taskId": "uuid-xxxx",
+  "status": "completed",
+  "resultFileKey": "results/2026/04/10/abc123_result.mp4",
+  "resultJson": {
+    "frames_analyzed": 300,
+    "detections": [...],
+    "summary": { "left_pressure_avg": 0.62, "right_pressure_avg": 0.38 }
+  }
+}
+```
+
+### Worker 失败回调格式
+
+```json
+{
+  "taskId": "uuid-xxxx",
+  "status": "failed",
+  "errorMsg": "Video format not supported"
+}
+```
+
+### Redis 连接
+
+- Mac Mini 的 Worker 通过**公网连接**到云服务器的 Redis
+- Redis 需要设置密码 + 只允许特定 IP 连接
+- 队列名称：`ski-inference-queue`
+
+---
+
+## 云服务器 Nginx 配置
+
+```nginx
+server {
+    listen 443 ssl;
+    server_name yourdomain.com;
+
+    # SSL 证书 (Let's Encrypt)
+    ssl_certificate /etc/letsencrypt/live/yourdomain.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/yourdomain.com/privkey.pem;
+
+    # 客户端前端 — 静态文件
+    location / {
+        root /var/www/skate-web/client;
+        try_files $uri $uri/ /index.html;
+    }
+
+    # 管理后台前端 — 静态文件
+    location /admin {
+        alias /var/www/skate-web/admin;
+        try_files $uri $uri/ /admin/index.html;
+    }
+
+    # 后端 API — 反向代理到 Node.js
+    location /api {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        client_max_body_size 500M;   # 允许大文件上传
+    }
+}
+```
+
+---
+
+## 分工说明
+
+| 模块 | 负责人 | 说明 |
+|------|--------|------|
+| `client/` 客户端前端 | **你** | 面向用户的网站 UI |
+| `admin/` 管理后台 | **你** | 积分管理、用户管理、任务监控 |
+| `server/` 后端 API | **你** | 核心业务逻辑、队列发布、数据库 |
+| `worker/` 推理消费者 | **你朋友** | 从 Redis 拉任务、跑 YOLO、回调结果 |
+
+> [!NOTE]
+> 你和朋友的代码通过 **Redis 队列 + OSS + 回调 API** 这三个接口解耦，可以完全独立开发和部署。你朋友只需要知道：(1) Redis 地址和密码 (2) OSS 的访问密钥 (3) 消息格式 (4) 回调 API 地址。
+
+---
+
+## 实施步骤
+
+### Phase 1: 项目基础搭建 ⏱️ 1天
+
+- [ ] 初始化 monorepo (pnpm workspace)
+- [ ] 初始化 `server/` — Express + TypeScript + Prisma + SQLite
+- [ ] 初始化 `client/` — React + Vite + TypeScript
+- [ ] 初始化 `admin/` — React + Vite + TypeScript
+- [ ] 配置 docker-compose (Redis)
+- [ ] 实现基础的 JWT 认证 (注册/登录)
+
+### Phase 2: 核心业务功能 ⏱️ 3-4天
+
+- [ ] 文件上传 API + OSS 集成 (先用本地存储开发)
+- [ ] 任务创建 + BullMQ 消息发布
+- [ ] 任务状态查询 API
+- [ ] Worker 回调 API
+- [ ] 积分扣减逻辑 (上传时检查 + 扣减)
+- [ ] 用户中心页面 (历史记录、积分余额)
+
+### Phase 3: 管理后台 ⏱️ 2-3天
+
+- [ ] 管理员登录 + 权限校验
+- [ ] 用户列表 + 搜索
+- [ ] 积分管理 (查看/手动充值/调整)
+- [ ] 任务管理 (列表/详情/重试)
+- [ ] 数据统计概览面板
+
+### Phase 4: 客户端前端美化 ⏱️ 2-3天
+
+- [ ] 首页 (产品介绍 + 动效)
+- [ ] 上传页面 (拖拽上传 + 进度条)
+- [ ] 结果展示页 (可视化分析报告)
+- [ ] 定价页面
+- [ ] 移动端适配
+
+### Phase 5: 支付与上线 ⏱️ 2-3天
+
+- [ ] 集成微信/支付宝支付 (或先手动充值)
+- [ ] Nginx + HTTPS 配置
+- [ ] 域名备案
+- [ ] 部署上线
+
+---
+
+## User Review Required
+
+> [!IMPORTANT]
+> 请确认以下决策：
+> 1. **前端技术栈**：方案选用 React + Vite，你是否熟悉 React？如果更熟悉 Vue 可以改为 Vue + Vite
+> 2. **管理后台 UI**：建议使用 Ant Design（开箱即用的表格、表单），是否同意？
+> 3. **初期存储**：开发阶段先用本地文件存储，部署时切到云 OSS，是否同意？
+> 4. **初期支付**：是否先做"管理员手动充值积分"模式，后续再接支付 SDK？
+
+## Verification Plan
+
+### 开发阶段验证
+- 后端 API 使用 Postman / curl 逐个测试
+- 用 Mock Worker 模拟 Mac Mini 消费任务并回调
+- 前端在浏览器中端到端走完上传→等待→查看结果流程
+
+### 部署阶段验证
+- 云服务器 Nginx + HTTPS 通过浏览器访问
+- Mac Mini Worker 连接 Redis 并成功拉取任务
+- 全链路：注册 → 充值 → 上传 → 推理 → 查看结果

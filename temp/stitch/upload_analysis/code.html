@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "outline-variant": "#3b4861",
+                    "surface-container-low": "#02132b",
+                    "on-error-container": "#ffa8a3",
+                    "on-error": "#490006",
+                    "on-primary-fixed-variant": "#004c5e",
+                    "primary-fixed": "#00d2ff",
+                    "on-surface": "#dbe6ff",
+                    "surface-bright": "#152c4e",
+                    "surface-container-lowest": "#000000",
+                    "on-surface-variant": "#9eabc8",
+                    "on-primary-container": "#004253",
+                    "error-dim": "#d7383b",
+                    "secondary-container": "#00677d",
+                    "primary-container": "#00d2ff",
+                    "inverse-primary": "#00687f",
+                    "background": "#010e24",
+                    "on-tertiary-container": "#f8f1ff",
+                    "error-container": "#9f0519",
+                    "secondary-fixed-dim": "#59d2f5",
+                    "surface-variant": "#102645",
+                    "inverse-surface": "#f9f9ff",
+                    "secondary-dim": "#52cdef",
+                    "inverse-on-surface": "#48556e",
+                    "on-secondary-fixed": "#003a47",
+                    "secondary-fixed": "#78dfff",
+                    "primary": "#72dcff",
+                    "tertiary-fixed-dim": "#b190ff",
+                    "tertiary-container": "#7000ff",
+                    "tertiary-fixed": "#bda1ff",
+                    "primary-fixed-dim": "#00c3ed",
+                    "on-secondary-container": "#edfaff",
+                    "on-background": "#dbe6ff",
+                    "error": "#ff716c",
+                    "on-tertiary-fixed": "#1f0052",
+                    "secondary": "#63dbfe",
+                    "surface-tint": "#72dcff",
+                    "outline": "#687690",
+                    "on-secondary-fixed-variant": "#00586b",
+                    "surface": "#010e24",
+                    "tertiary": "#ac89ff",
+                    "on-primary-fixed": "#002c38",
+                    "primary-dim": "#00c3ed",
+                    "on-tertiary": "#290067",
+                    "surface-container": "#061934",
+                    "surface-dim": "#010e24",
+                    "surface-container-highest": "#102645",
+                    "on-primary": "#004c5e",
+                    "tertiary-dim": "#874cff",
+                    "on-secondary": "#004b5b",
+                    "surface-container-high": "#0b203d",
+                    "on-tertiary-fixed-variant": "#4700a7"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "fontFamily": {
+                    "headline": [
+                            "Space Grotesk"
+                    ],
+                    "body": [
+                            "Inter"
+                    ],
+                    "label": [
+                            "Inter"
+                    ]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .glass-panel {
+            background: rgba(16, 38, 69, 0.4);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        .scan-line {
+            background: linear-gradient(to bottom, transparent, #72dcff, transparent);
+            height: 100px;
+            width: 100%;
+            position: absolute;
+            top: -100px;
+            opacity: 0.3;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #010e24;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #3b4861;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body selection:bg-primary/30 min-h-screen">
+<!-- Top Navigation Bar -->
+<nav class="fixed top-0 w-full z-50 bg-[#010e24]/40 backdrop-blur-xl border-b border-[#72dcff]/15 shadow-[0_0_20px_rgba(114,220,255,0.05)]">
+<div class="flex justify-between items-center px-8 h-20 w-full max-w-screen-2xl mx-auto font-['Space_Grotesk'] tracking-tight">
+<div class="text-2xl font-bold tracking-tighter text-[#72dcff] uppercase">GLACIAL LAB</div>
+<div class="hidden md:flex items-center gap-10">
+<a class="text-[#dbe6ff]/70 hover:text-[#72dcff] transition-colors" href="#">Home</a>
+<a class="text-[#72dcff] border-b-2 border-[#72dcff] pb-1" href="#">Upload</a>
+<a class="text-[#dbe6ff]/70 hover:text-[#72dcff] transition-colors" href="#">Results</a>
+<a class="text-[#dbe6ff]/70 hover:text-[#72dcff] transition-colors" href="#">Pricing</a>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 text-[#72dcff] hover:bg-[#72dcff]/10 hover:shadow-[0_0_15px_rgba(114,220,255,0.3)] transition-all duration-300 rounded-full active:scale-95">
+<span class="material-symbols-outlined" data-icon="account_circle">account_circle</span>
+</button>
+</div>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="pt-32 pb-20 px-6 max-w-screen-2xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
+<!-- Left Column: Upload Hub -->
+<div class="lg:col-span-8 space-y-12">
+<!-- Hero Header -->
+<header class="space-y-4">
+<h1 class="font-headline text-5xl font-bold tracking-tight text-on-surface">
+                    DATA <span class="text-primary">INGESTION</span>
+</h1>
+<p class="text-on-surface-variant max-w-xl text-lg leading-relaxed">
+                    Synchronize your high-performance sensor telemetry with our glacial intelligence engine for real-time kinematic analysis.
+                </p>
+</header>
+<!-- Upload Zone -->
+<section class="relative group">
+<div class="glass-panel border border-outline-variant/30 rounded-xl overflow-hidden p-12 flex flex-col items-center justify-center min-h-[400px] hover:border-primary/50 transition-all duration-500">
+<!-- Scanning Visual Decor -->
+<div class="absolute inset-0 overflow-hidden pointer-events-none opacity-20 group-hover:opacity-40 transition-opacity">
+<div class="scan-line"></div>
+<div class="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-primary"></div>
+<div class="absolute top-0 right-0 w-8 h-8 border-t-2 border-r-2 border-primary"></div>
+<div class="absolute bottom-0 left-0 w-8 h-8 border-b-2 border-l-2 border-primary"></div>
+<div class="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-primary"></div>
+</div>
+<!-- Icon & Content -->
+<div class="z-10 text-center space-y-6">
+<div class="w-24 h-24 bg-surface-container-high rounded-full flex items-center justify-center mx-auto border border-outline-variant/50 shadow-[0_0_30px_rgba(114,220,255,0.1)] group-hover:shadow-[0_0_40px_rgba(114,220,255,0.2)] transition-all">
+<span class="material-symbols-outlined text-4xl text-primary" data-icon="upload_file">upload_file</span>
+</div>
+<div class="space-y-2">
+<h3 class="text-2xl font-headline font-semibold">Drop Telemetry Here</h3>
+<p class="text-on-surface-variant">or browse local secure terminal for encrypted logs</p>
+</div>
+<button class="bg-gradient-to-r from-primary to-primary-container text-on-primary-fixed px-8 py-3 rounded-xl font-bold tracking-tight hover:shadow-[0_0_20px_rgba(114,220,255,0.5)] transition-all active:scale-95">
+                            SELECT SOURCE
+                        </button>
+</div>
+</div>
+<!-- Supported Formats Bar -->
+<div class="mt-6 flex flex-wrap gap-4 items-center justify-center lg:justify-start">
+<span class="text-xs font-bold tracking-widest text-on-surface-variant uppercase">Protocols:</span>
+<div class="flex gap-2">
+<span class="px-3 py-1 bg-surface-container text-primary text-xs font-mono rounded-lg border border-outline-variant/30">CSV_STREAM</span>
+<span class="px-3 py-1 bg-surface-container text-primary text-xs font-mono rounded-lg border border-outline-variant/30">JSON_PACKET</span>
+<span class="px-3 py-1 bg-surface-container text-primary text-xs font-mono rounded-lg border border-outline-variant/30">XML_STRUCT</span>
+</div>
+</div>
+</section>
+<!-- Analysis Tracker -->
+<section class="space-y-6">
+<h2 class="font-headline text-2xl font-semibold flex items-center gap-3">
+<span class="material-symbols-outlined text-primary" data-icon="data_exploration">data_exploration</span>
+                    ACTIVE PIPELINE
+                </h2>
+<div class="space-y-4">
+<!-- Status Step 1 -->
+<div class="surface-container p-6 rounded-xl border border-outline-variant/10 flex items-center justify-between">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary" data-icon="check" style="font-variation-settings: 'FILL' 1;">check</span>
+</div>
+<div>
+<h4 class="font-bold text-on-surface">UPLOADING STREAM</h4>
+<p class="text-xs text-on-surface-variant uppercase tracking-widest">Protocol: Encrypted AES-256</p>
+</div>
+</div>
+<span class="text-primary text-sm font-mono">COMPLETE</span>
+</div>
+<!-- Status Step 2 -->
+<div class="surface-container p-6 rounded-xl border border-primary/30 bg-primary/5 flex items-center justify-between relative overflow-hidden">
+<div class="flex items-center gap-4 z-10">
+<div class="w-10 h-10 rounded-full border-2 border-primary border-t-transparent animate-spin flex items-center justify-center">
+</div>
+<div>
+<h4 class="font-bold text-primary">PROCESSING KINEMATICS</h4>
+<p class="text-xs text-on-surface-variant uppercase tracking-widest">Parsing 4.2k pressure nodes/sec</p>
+</div>
+</div>
+<span class="text-primary text-sm font-mono z-10">45%</span>
+<div class="absolute bottom-0 left-0 h-1 bg-primary w-[45%] transition-all"></div>
+</div>
+<!-- Status Step 3 -->
+<div class="surface-container p-6 rounded-xl border border-outline-variant/10 opacity-50 flex items-center justify-between">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="monitoring">monitoring</span>
+</div>
+<div>
+<h4 class="font-bold text-on-surface">GENERATING VISUALS</h4>
+<p class="text-xs text-on-surface-variant uppercase tracking-widest">Pending pipeline queue</p>
+</div>
+</div>
+<span class="text-on-surface-variant text-sm font-mono italic">QUEUED</span>
+</div>
+</div>
+</section>
+</div>
+<!-- Right Column: Quick Stats Sidebar -->
+<aside class="lg:col-span-4 space-y-8">
+<div class="glass-panel border border-outline-variant/20 rounded-xl p-8 sticky top-28 space-y-8">
+<h3 class="font-headline text-xl font-bold uppercase tracking-tight flex items-center justify-between">
+                    System Analytics
+                    <span class="text-[10px] bg-primary/20 text-primary px-2 py-1 rounded">LIVE_FEED</span>
+</h3>
+<!-- Stats Cards Group -->
+<div class="space-y-6">
+<div class="space-y-2">
+<div class="flex justify-between text-xs font-bold text-on-surface-variant uppercase">
+<span>Last Peak Force</span>
+<span>98.4 PSI</span>
+</div>
+<div class="h-2 bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-tertiary w-4/5"></div>
+</div>
+</div>
+<div class="space-y-2">
+<div class="flex justify-between text-xs font-bold text-on-surface-variant uppercase">
+<span>Balance Variance</span>
+<span>± 1.2%</span>
+</div>
+<div class="h-2 bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-primary w-1/3"></div>
+</div>
+</div>
+</div>
+<hr class="border-outline-variant/10"/>
+<!-- Previous Uploads List -->
+<div class="space-y-4">
+<h4 class="text-xs font-bold text-primary uppercase tracking-[0.2em]">Previous Labs</h4>
+<div class="space-y-3">
+<div class="flex items-center gap-4 p-3 rounded-lg hover:bg-white/5 transition-colors cursor-pointer group">
+<div class="w-12 h-12 rounded bg-surface-container flex items-center justify-center">
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors" data-icon="downhill_skiing">downhill_skiing</span>
+</div>
+<div class="flex-1 min-w-0">
+<p class="text-sm font-bold truncate">Slalom_Elite_Run_04</p>
+<p class="text-[10px] text-on-surface-variant uppercase">14 OCT 2023 • 124 MB</p>
+</div>
+</div>
+<div class="flex items-center gap-4 p-3 rounded-lg hover:bg-white/5 transition-colors cursor-pointer group">
+<div class="w-12 h-12 rounded bg-surface-container flex items-center justify-center">
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors" data-icon="speed">speed</span>
+</div>
+<div class="flex-1 min-w-0">
+<p class="text-sm font-bold truncate">G_Force_Test_Zermatt</p>
+<p class="text-[10px] text-on-surface-variant uppercase">12 OCT 2023 • 89 MB</p>
+</div>
+</div>
+<div class="flex items-center gap-4 p-3 rounded-lg hover:bg-white/5 transition-colors cursor-pointer group">
+<div class="w-12 h-12 rounded bg-surface-container flex items-center justify-center">
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors" data-icon="timer">timer</span>
+</div>
+<div class="flex-1 min-w-0">
+<p class="text-sm font-bold truncate">Endurance_Drill_01</p>
+<p class="text-[10px] text-on-surface-variant uppercase">09 OCT 2023 • 215 MB</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Footer Callout -->
+<div class="p-4 bg-tertiary-container/20 rounded-xl border border-tertiary/20">
+<p class="text-xs text-on-tertiary-container/80 leading-relaxed italic">
+                        "Precision is the difference between a podium and a fall."
+                    </p>
+</div>
+</div>
+</aside>
+</main>
+<!-- Footer -->
+<footer class="w-full py-12 mt-20 bg-[#010e24] border-t border-[#72dcff]/10 font-['Inter'] text-sm uppercase tracking-widest">
+<div class="flex flex-col md:flex-row justify-between items-center px-12 gap-8 w-full max-w-screen-2xl mx-auto">
+<div class="text-[#dbe6ff]/40">
+                © 2024 PRECISION ALPINE LABS. ALL RIGHTS RESERVED.
+            </div>
+<div class="flex flex-wrap justify-center gap-8">
+<a class="text-[#dbe6ff]/40 hover:text-[#72dcff] transition-opacity duration-200 hover:underline decoration-[#72dcff] underline-offset-4" href="#">Technical Support</a>
+<a class="text-[#dbe6ff]/40 hover:text-[#72dcff] transition-opacity duration-200 hover:underline decoration-[#72dcff] underline-offset-4" href="#">Privacy Protocol</a>
+<a class="text-[#dbe6ff]/40 hover:text-[#72dcff] transition-opacity duration-200 hover:underline decoration-[#72dcff] underline-offset-4" href="#">System Status</a>
+<a class="text-[#dbe6ff]/40 hover:text-[#72dcff] transition-opacity duration-200 hover:underline decoration-[#72dcff] underline-offset-4" href="#">Terms of Service</a>
+</div>
+</div>
+</footer>
+<!-- Background Decoration -->
+<div class="fixed inset-0 -z-10 pointer-events-none">
+<div class="absolute top-1/4 -right-20 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px]"></div>
+<div class="absolute bottom-1/4 -left-20 w-[400px] h-[400px] bg-tertiary/5 rounded-full blur-[100px]"></div>
+</div>
+</body></html>
