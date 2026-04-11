@@ -125,7 +125,16 @@ router.get('/:id', authMiddleware, async (req: AuthRequest, res) => {
       return;
     }
 
-    res.json({ task });
+    // 构造完整的详情对象，包含绝对 URL 和解析后的 JSON
+    const baseUrl = `${req.protocol}://${req.get('host')}`;
+    const taskDetail = {
+      ...task,
+      inputFileUrl: `${baseUrl}/uploads/${task.inputFileKey}`,
+      resultFileUrl: task.resultFileKey ? `${baseUrl}/uploads/${task.resultFileKey}` : null,
+      resultJson: task.resultJson ? JSON.parse(task.resultJson) : null,
+    };
+
+    res.json(taskDetail);
   } catch (err) {
     console.error('获取任务详情失败:', err);
     res.status(500).json({ error: '获取任务详情失败' });

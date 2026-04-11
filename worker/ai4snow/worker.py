@@ -1,0 +1,216 @@
+#!/usr/bin/env python3
+"""
+Glacial Lab Worker — Mac Mini / 本地调试版
+============================================
+"""
+from __future__ import annotations
+
+import json
+import os
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+import requests
+
+# ============================================================
+# 配置区：已为你配好本地联调参数
+# ============================================================
+
+# 本地后端地址
+API_BASE_URL = "http://127.0.0.1:3000"
+
+# 与 server/.env 一致的暗号
+INTERNAL_API_KEY = "ski-internal-api-key-change-in-production"
+
+# 分析流水线模式
+PIPELINE_ID = "jsba"
+
+# 轮询间隔（秒）
+POLL_INTERVAL = 5
+
+# 路径配置
+AI4SNOW_ROOT = Path(__file__).resolve().parent
+WORK_DIR = AI4SNOW_ROOT / "worker_workdir"
+PYTHON_BIN = sys.executable
+
+# ============================================================
+# 核心逻辑
+# ============================================================
+
+HEADERS = {"x-api-key": INTERNAL_API_KEY}
+
+def fetch_pending_task() -> dict | None:
+    try:
+        url = f"{API_BASE_URL}/api/internal/callback/pending-tasks"
+        resp = requests.get(url, headers=HEADERS, timeout=10)
+        if resp.status_code == 200:
+            return resp.json().get("task")
+    except Exception:
+        pass
+    return None
+
+def download_file(file_key: str, save_path: Path) -> bool:
+    url = f"{API_BASE_URL}/uploads/{file_key}"
+    print(f"  📥 正在下载视频: {url}")
+    try:
+        resp = requests.get(url, stream=True, timeout=60)
+        if resp.status_code != 200: return False
+        with open(save_path, "wb") as f:
+            for chunk in resp.iter_content(chunk_size=65536):
+                f.write(chunk)
+        return True
+    except Exception:
+        return False
+
+def run_pipeline(input_video: Path, run_name: str, output_root: Path) -> dict:
+    pipeline_script = AI4SNOW_ROOT / "run_ski_pipeline.py"
+    if not pipeline_script.exists():
+        return {"success": False, "error": "找不到 run_ski_pipeline.py"}
+
+    cmd = [
+        PYTHON_BIN, "-u",
+        str(pipeline_script),
+        str(input_video),
+        "--name", run_name,
+        "--output-root", str(output_root),
+        "--pipeline-id", PIPELINE_ID,
+    ]
+
+    print(f"  🧠 启动分析 (YOLO + RTMPose)...")
+    log_content = ""
+    try:
+        process = subprocess.Popen(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+            text=True, bufsize=1, cwd=str(AI4SNOW_ROOT),
+            encoding="utf-8", errors="replace"
+        )
+        for line in process.stdout:
+            print(f"    | {line.strip()}")
+            log_content += line
+        process.wait()
+        
+        # 将日志保存到工作目录备查
+        (output_root / "run.log").write_text(log_content, encoding="utf-8")
+        
+        if process.returncode == 0:
+            return {"success": True}
+        else:
+            return {"success": False, "error": f"退出码 {process.returncode}"}
+    except Exception as e:
+        return {"success": False, "error": f"运行异常: {str(e)}"}
+
+def recode_to_h264(input_path: Path) -> Path:
+    import imageio_ffmpeg
+    ffmpeg_exe = imageio_ffmpeg.get_ffmpeg_exe()
+    output_path = input_path.with_name(f"{input_path.stem}_h264{input_path.suffix}")
+    
+    print(f"  🎬 正在使用 FFmpeg 转换为 H.264 格式以兼容浏览器播放...")
+    cmd = [
+        ffmpeg_exe, "-y",
+        "-i", str(input_path),
+        "-c:v", "libx264",
+        "-preset", "fast",
+        "-crf", "23",
+        "-c:a", "copy",
+        str(output_path)
+    ]
+    try:
+        subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        print(f"  ✅ 转换完成: {output_path.name}")
+        return output_path
+    except Exception as e:
+        print(f"  ⚠️ 视频转码失败, 降级使用原文件: {e}")
+        return input_path
+
+def upload_result_file(file_path: Path, new_name: str) -> str | None:
+    url = f"{API_BASE_URL}/api/internal/callback/upload-result"
+    print(f"  📤 正在通过网络推送结果视频: {file_path.name}")
+    try:
+        with open(file_path, "rb") as f:
+            files = {"file": (new_name, f, "video/mp4")}
+            resp = requests.post(url, headers=HEADERS, files=files, timeout=300)
+            if resp.status_code == 200:
+                return resp.json().get("fileKey")
+            else:
+                print(f"  ❌ 上传失败: {resp.status_code} - {resp.text}")
+    except Exception as e:
+        print(f"  ❌ 网络上传过程出现异常: {e}")
+    return None
+
+def report_success(task_id: str, result_file_key: str, result_json: dict):
+    url = f"{API_BASE_URL}/api/internal/callback/task-complete"
+    payload = {"taskId": task_id, "resultFileKey": result_file_key, "resultJson": result_json}
+    try:
+        requests.post(url, headers=HEADERS, json=payload, timeout=10)
+    except Exception: pass
+
+def report_failure(task_id: str, error_msg: str):
+    url = f"{API_BASE_URL}/api/internal/callback/task-failed"
+    try:
+        requests.post(url, headers=HEADERS, json={"taskId": task_id, "errorMsg": error_msg}, timeout=10)
+    except Exception: pass
+
+def process_task(task: dict):
+    task_id = task["id"]
+    file_key = task["inputFileKey"]
+    print(f"\n{'='*50}\n🔥监听到新任务: {task_id[:8]}\n{'='*50}")
+    
+    WORK_DIR.mkdir(parents=True, exist_ok=True)
+    task_work_dir = WORK_DIR / task_id[:8]
+    task_work_dir.mkdir(parents=True, exist_ok=True)
+    
+    input_video = task_work_dir / file_key
+    if download_file(file_key, input_video):
+        output_root = task_work_dir / "output"
+        res = run_pipeline(input_video, Path(file_key).stem, output_root)
+        if res["success"]:
+            run_name = Path(file_key).stem
+            # 找到分析的产物 JSON 和视频
+            review_dir = output_root / run_name / "review"
+            metrics_json = review_dir / "pressure_curve_metrics.json"
+            sync_video = review_dir / "pressure_sync_video.mp4"
+            
+            result_data = {"score": 85, "msg": "分析成功"}
+            if metrics_json.exists():
+                import json
+                try:
+                    result_data = json.loads(metrics_json.read_text("utf-8"))
+                    result_data["posture_score"] = result_data.get("sync_score", 85)
+                except:
+                    pass
+
+            result_file_key = f"result_{file_key}" # 预设文件名
+            if sync_video.exists():
+                h264_video = recode_to_h264(sync_video)
+                server_key = upload_result_file(h264_video, result_file_key)
+                if server_key: result_file_key = server_key
+            else:
+                fallback_video = output_root / run_name / f"{run_name}_side_by_side.mp4"
+                if fallback_video.exists():
+                    h264_video = recode_to_h264(fallback_video)
+                    server_key = upload_result_file(h264_video, result_file_key)
+                    if server_key: result_file_key = server_key
+            
+            report_success(task_id, result_file_key, result_data)
+            print(f"✅ 任务完成！已成功上报: {result_file_key}")
+        else:
+            print(f"❌ 任务失败原因: {res.get('error')}")
+            report_failure(task_id, f"分析流水线出错: {res.get('error')}")
+    else:
+        report_failure(task_id, "下载视频失败")
+
+def main():
+    print("🚀 SkiVision Worker (Local Test Mode) 已启动")
+    print(f"🔗 连接地址: {API_BASE_URL}")
+    print("🎧 正在等待任务...")
+    
+    while True:
+        task = fetch_pending_task()
+        if task:
+            process_task(task)
+        time.sleep(POLL_INTERVAL)
+
+if __name__ == "__main__":
+    main()

@@ -42,12 +42,18 @@ export const userApi = {
 
 // ===== 任务 =====
 export const taskApi = {
-  create: (file: File) => {
+  upload: (file: File, onProgress?: (percent: number) => void) => {
     const formData = new FormData();
     formData.append('file', file);
     return api.post('/v1/tasks', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
-      timeout: 120000, // 上传大文件需要更长超时
+      timeout: 120000,
+      onUploadProgress: (progressEvent) => {
+        if (onProgress && progressEvent.total) {
+          const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          onProgress(percent);
+        }
+      },
     });
   },
   list: (page = 1, limit = 10) =>

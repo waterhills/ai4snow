@@ -33,12 +33,17 @@ export default function Result() {
       try {
         const res = await taskApi.getStatus(id);
         if (isMounted) {
-          setTask(res.data);
-          // 如果任务在进行中，继续轮询
-          if (res.data.status === 'PENDING' || res.data.status === 'PROCESSING') {
-            timer = window.setTimeout(fetchStatus, 3000);
-          } else {
+          // 如果任务刚完成，我们需要获取一次全量详情（包括 JSON 和 URL）
+          if (res.data.status === 'COMPLETED') {
+            const detailRes = await taskApi.get(id);
+            setTask(detailRes.data);
             setLoading(false);
+          } else if (res.data.status === 'FAILED') {
+            setTask(res.data);
+            setLoading(false);
+          } else {
+            setTask(res.data);
+            timer = window.setTimeout(fetchStatus, 3000);
           }
         }
       } catch (err) {
@@ -151,7 +156,7 @@ export default function Result() {
             
             <div className="mt-10 lg:mt-0 relative w-full rounded-2xl overflow-hidden glass-panel border border-outline-variant/30 flex justify-center items-center min-h-[400px]">
                 {isVideo ? (
-                    <video src={task?.resultFileUrl!} controls autoPlay loop className="w-full h-full object-contain max-h-[600px]" />
+                    <video src={task?.resultFileUrl!} controls autoPlay muted loop className="w-full h-full object-contain max-h-[600px]" />
                 ) : (
                    task?.resultFileUrl ? (
                       <img src={task.resultFileUrl} alt="Result Visual" className="w-full h-full object-contain max-h-[600px] border border-primary/10" />

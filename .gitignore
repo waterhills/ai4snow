@@ -105,3 +105,19 @@ dist
 # OS metadata
 .DS_Store
 Thumbs.db
+
+# ===== AI4SNOW Python & Data =====
+worker/ai4snow/worker_workdir/
+worker/ai4snow/output/
+worker/ai4snow/model/
+worker/ai4snow/input/
+worker/ai4snow/__pycache__/
+worker/ai4snow/.pytest_cache/
+*.pyc
+*.db
+*.sqlite
+*.sqlite3
+
+# ===== Server Uploads =====
+server/uploads/
+

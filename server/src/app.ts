@@ -17,7 +17,16 @@ ensureUploadDir();
 const app = express();
 
 // ===== 中间件 =====
-app.use(helmet());
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  contentSecurityPolicy: {
+    directives: {
+      ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+      "media-src": ["'self'", "*"],
+      "img-src": ["'self'", "data:", "http://localhost:3000"],
+    },
+  },
+}));
 app.use(cors({
   origin: ['http://localhost:5173', 'http://localhost:5174'], // Vite 开发服务器
   credentials: true,

@@ -1,0 +1,131 @@
+# 🔗 ai4snow 与 SkiVision SaaS 的集成指南
+
+## 一、你朋友的代码做了什么？（通俗版）
+
+你朋友写的 `ai4snow` 就像一个**自动阅卷老师**：
+- 你扔给他一段滑雪视频（考卷）
+- 他自动识别出里面的人，画出骨骼骨架
+- 给出评分、压力曲线图、标注视频（批改后的考卷）
+
+他之前的做法是：老师自己开了一个窗口直接接待学生（Flask + frp）。
+**我们现在的做法是：老师不再直接面对学生，改成从"待批改信箱"里一份一份拿。**
+
+## 二、整合后的数据流向图
+
+```
+用户浏览器                    香港 VPS                     Mac mini
+(你的客户)                 (前台调度中心)                  (AI 后厨)
+   │                          │                            │
+   │ 1. 上传视频              │                            │
+   │─────────────────────────►│                            │
+   │                          │ 2. 保存文件到 uploads/     │
+   │                          │    创建 PENDING 任务         │
+   │                          │    扣 1 积分                │
+   │  3. 返回"已提交"         │                            │
+   │◄─────────────────────────│                            │
+   │                          │                            │
+   │                          │    4. worker.py 轮询       │
+   │                          │◄───────────────────────────│
+   │                          │    "有新任务吗？"           │
+   │                          │                            │
+   │                          │ 5. 返回任务 + 锁定 PROCESSING│
+   │                          │───────────────────────────►│
+   │                          │                            │
+   │                          │    6. 下载原始视频          │
+   │                          │◄───────────────────────────│
+   │                          │                            │
+   │                          │    7. 调用 run_ski_pipeline │
+   │                          │       YOLOv8 + RTMPose      │
+   │                          │       生成骨架视频 + 评分    │
+   │                          │                            │
+   │                          │    8. POST 结果回 VPS       │
+   │                          │◄───────────────────────────│
+   │                          │    标记 COMPLETED + 存 JSON  │
+   │                          │                            │
+   │ 9. 用户刷新页面          │                            │
+   │     看到分析结果！        │                            │
+   │◄─────────────────────────│                            │
+```
+
+## 三、worker.py 放在哪里？
+
+`worker.py` 已经被我直接放在了你朋友的项目目录里：
+
+```
+worker/
+├── ai4snow/                     ← 你朋友的原始项目（保持不动！）
+│   ├── run_ski_pipeline.py      ← 核心分析脚本
+│   ├── video_keypoint_tracker.py
+│   ├── evaluators/              ← 评估器模块
+│   ├── model/                   ← YOLO/RTMPose 模型权重
+│   ├── worker.py                ← ⭐ 新增的消费者脚本（就是我写的）
+│   └── ...
+└── worker.py                    ← 旧的模拟模板（可以删掉）
+```
+
+**关键点**：`worker.py` 必须放在 `ai4snow/` 目录下面（和 `run_ski_pipeline.py` 同级），
+因为它需要能找到 `run_ski_pipeline.py` 并以子进程的方式调用它。
+
+## 四、你朋友在 Mac mini 上需要做的事
+
+### 第 1 步：确保 ai4snow 原有环境能正常工作
+```bash
+# 先确认原来的流水线能跑通
+cd /path/to/ai4snow
+python run_ski_pipeline.py /path/to/一段测试视频.mp4
+# 如果能正常输出 overlay.mp4 就说明环境没问题
+```
+
+### 第 2 步：安装一个 worker 需要的额外依赖
+```bash
+pip install requests
+```
+（其他的 torch, opencv 等之前应该用过就已经装好了）
+
+### 第 3 步：配置 VPS 的连接信息
+打开 `worker.py`，修改顶部的两行配置：
+```python
+API_BASE_URL = "http://103.251.89.147"          # 替换成你 VPS 的真实地址
+INTERNAL_API_KEY = "dev-internal-key"            # 替换成你 VPS.env 里设置的密钥
+```
+
+### 第 4 步：启动 Worker
+```bash
+cd /path/to/ai4snow
+python worker.py
+```
+你会看到：
+```
+  🌐 VPS 地址: http://103.251.89.147
+  🧠 分析模式: jsba
+  👂 开始监听任务队列...
+```
+然后它就会一直默默运行，有人在网站上传视频后，它会自动开始干活。
+
+### 第 5 步（可选）：让它在后台一直运行
+```bash
+# 方法 A：用 nohup
+nohup python worker.py > worker.log 2>&1 &
+
+# 方法 B：用 tmux（推荐）
+tmux new -s worker
+python worker.py
+# 按 Ctrl+B 再按 D 脱离，它会在后台继续跑
+```
+
+## 五、当前的已知限制（MVP 阶段）
+
+> [!WARNING]
+> ### 结果视频暂时无法在前端播放
+> 目前 worker 在 Mac mini 本地生成了结果视频（骨架叠加、压力同步等），
+> 但**还没有自动上传回 VPS**。前端只能看到文字评分和反馈。
+>
+> **后续解决方案**（二选一）：
+> 1. **简单版**：用 `scp` 定时把 Mac mini 的结果视频同步到 VPS 的 uploads 文件夹
+> 2. **正式版**：接入 OSS 云存储，worker 完成后直接传到云端，前端通过 URL 播放
+
+> [!NOTE]
+> ### 关于 frp 的去留
+> 如果你仍然希望保留 frp 作为 Mac mini 访问 VPS 的"隧道备选"也可以，
+> 但 worker.py 本身是**出站连接**（Mac mini 主动访问 VPS），
+> 所以根本不需要 frp 穿透——只要 Mac mini 能上网就行。
