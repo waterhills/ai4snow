@@ -5,6 +5,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
 import { prisma } from '../lib/db';
 import { publishTask } from '../services/queue';
+import { deleteTaskFiles } from '../services/storage';
 import { config } from '../config';
 
 const router = Router();
@@ -12,7 +13,8 @@ const router = Router();
 // 文件上传配置：按日期分目录存储
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => {
-    cb(null, path.resolve(config.uploadDir));
+    const inputsDir = path.join(path.resolve(config.uploadDir), 'inputs');
+    cb(null, inputsDir);
   },
   filename: (_req, file, cb) => {
     const ext = path.extname(file.originalname);
@@ -129,8 +131,9 @@ router.get('/:id', authMiddleware, async (req: AuthRequest, res) => {
     const baseUrl = `${req.protocol}://${req.get('host')}`;
     const taskDetail = {
       ...task,
-      inputFileUrl: `${baseUrl}/uploads/${task.inputFileKey}`,
-      resultFileUrl: task.resultFileKey ? `${baseUrl}/uploads/${task.resultFileKey}` : null,
+      inputFileUrl: `${baseUrl}/uploads/inputs/${task.inputFileKey}`,
+      resultFileUrl: task.resultFileKey ? `${baseUrl}/uploads/results/${task.resultFileKey}` : null,
+      resultFileUrl2: task.resultFileKey2 ? `${baseUrl}/uploads/results/${task.resultFileKey2}` : null,
       resultJson: task.resultJson ? JSON.parse(task.resultJson) : null,
     };
 
@@ -157,6 +160,38 @@ router.get('/:id/status', authMiddleware, async (req: AuthRequest, res) => {
     res.json(task);
   } catch (err) {
     res.status(500).json({ error: '查询状态失败' });
+  }
+});
+
+// 删除任务
+router.delete('/:id', authMiddleware, async (req: AuthRequest, res) => {
+  try {
+    const task = await prisma.task.findFirst({
+      where: { id: req.params.id, userId: req.userId },
+    });
+
+    if (!task) {
+      res.status(404).json({ error: '任务不存在' });
+      return;
+    }
+
+    // 删除关联文件 + 数据库记录，未完成的任务退还积分
+    await prisma.$transaction(async (tx) => {
+      if (task.status !== 'COMPLETED') {
+        await tx.user.update({
+          where: { id: req.userId },
+          data: { credits: { increment: 1 } },
+        });
+      }
+      await tx.task.delete({ where: { id: task.id } });
+    });
+
+    deleteTaskFiles(task);
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('删除任务失败:', err);
+    res.status(500).json({ error: '删除任务失败' });
   }
 });
 

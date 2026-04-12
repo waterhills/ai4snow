@@ -60,6 +60,7 @@ export const taskApi = {
     api.get(`/v1/tasks?page=${page}&limit=${limit}`),
   get: (id: string) => api.get(`/v1/tasks/${id}`),
   getStatus: (id: string) => api.get(`/v1/tasks/${id}/status`),
+  delete: (id: string) => api.delete(`/v1/tasks/${id}`),
 };
 
 export default api;

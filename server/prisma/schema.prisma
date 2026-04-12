@@ -28,8 +28,9 @@ model Task {
   user          User       @relation(fields: [userId], references: [id])
   status        TaskStatus @default(PENDING)
   inputFileKey  String
-  resultFileKey String?
-  resultJson    String?
+  resultFileKey  String?
+  resultFileKey2 String?
+  resultJson     String?
   errorMsg      String?
   createdAt     DateTime   @default(now())
   startedAt     DateTime?

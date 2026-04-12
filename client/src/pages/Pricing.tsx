@@ -62,6 +62,19 @@ export default function Pricing() {
 
   const totalPages = Math.ceil(total / 10);
 
+  const handleDelete = async (e: React.MouseEvent, taskId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!confirm('确定要删除这条分析记录吗？')) return;
+
+    try {
+      await taskApi.delete(taskId);
+      loadData();
+    } catch (err) {
+      console.error('删除失败:', err);
+    }
+  };
+
   return (
     <main className="pt-32 pb-20 px-8 max-w-screen-2xl mx-auto">
       {/* 个人信息及历史仪表盘区域 (仅当已登录时显示) */}
@@ -170,6 +183,13 @@ export default function Pricing() {
                             {scoreLabel}
                           </span>
                         </div>
+                        <button
+                          onClick={(e) => handleDelete(e, task.id)}
+                          className="w-10 h-10 rounded-full bg-surface-lowest flex items-center justify-center border border-outline-variant/20 hover:border-error/50 hover:bg-error/10 transition-colors"
+                          title="删除记录"
+                        >
+                          <span className="material-symbols-outlined text-on-surface-variant hover:text-error transition-colors" style={{ fontSize: '20px' }}>delete</span>
+                        </button>
                         <div className="w-10 h-10 rounded-full bg-surface-lowest flex items-center justify-center border border-outline-variant/20 group-hover:border-primary/50 transition-colors">
                           <span className="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors">chevron_right</span>
                         </div>

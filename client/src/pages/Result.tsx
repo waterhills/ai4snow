@@ -12,12 +12,23 @@ interface TaskDetail {
   } | null;
   inputFileUrl: string;
   resultFileUrl: string | null;
+  resultFileUrl2: string | null;
 }
 
 export default function Result() {
   const { id } = useParams<{ id: string }>();
   const [task, setTask] = useState<TaskDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const hasSyncVideo = !!task?.resultFileUrl;
+  const hasSideVideo = !!task?.resultFileUrl2;
+  const [viewMode, setViewMode] = useState<'sync' | 'side'>('sync');
+
+  // 根据可用视频自动切换：如果没有 sync 视频，默认切到 side
+  useEffect(() => {
+    if (task?.status === 'COMPLETED' && !hasSyncVideo && hasSideVideo && viewMode === 'sync') {
+      setViewMode('side');
+    }
+  }, [task?.status, hasSyncVideo, hasSideVideo]);
 
   // 轮询机制
   useEffect(() => {
@@ -128,7 +139,8 @@ export default function Result() {
 
   // --- SUCCESS STATE: RENDERING RESULTS LAYER --- //
   const score = task?.resultJson?.posture_score || 0;
-  const isVideo = task?.resultFileUrl && task.resultFileUrl.match(/\.(mp4|webm|mov)(\?.*)?$/i);
+  const currentVideoUrl = viewMode === 'sync' ? task?.resultFileUrl : task?.resultFileUrl2;
+  const isVideo = !!currentVideoUrl && currentVideoUrl.match(/\.(mp4|webm|mov)(\?.*)?$/i);
 
   return (
     <main className="pt-32 pb-20 px-6 max-w-7xl mx-auto">
@@ -149,14 +161,56 @@ export default function Result() {
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
         {/* Visual Map */}
         <div className="md:col-span-8 group relative overflow-hidden rounded-xl bg-surface-container-low border border-outline-variant/15 p-8 transition-all flex flex-col justify-center items-center">
-            <div className="absolute top-8 left-8 z-10 bg-black/40 backdrop-blur px-4 py-2 rounded-lg border border-primary/20">
-                <h3 className="text-[10px] uppercase tracking-[0.2em] text-primary font-bold mb-1">Visual Matrix</h3>
-                <p className="text-lg font-headline font-bold tracking-tight text-on-surface uppercase">Render Output</p>
+            {/* View Selector Overlay */}
+            <div className="absolute top-8 left-8 right-8 z-20 flex justify-between items-start pointer-events-none">
+                <div className="bg-black/40 backdrop-blur px-4 py-2 rounded-lg border border-primary/20">
+                    <h3 className="text-[10px] uppercase tracking-[0.2em] text-primary font-bold mb-1">Visual Matrix</h3>
+                    <p className="text-lg font-headline font-bold tracking-tight text-on-surface uppercase">
+                        {viewMode === 'sync' ? 'Sync Analysis' : 'Side-by-Side'}
+                    </p>
+                </div>
+
+                <div className="flex bg-black/40 backdrop-blur p-1 rounded-xl border border-outline-variant/20 pointer-events-auto">
+                    <button
+                        onClick={() => hasSyncVideo && setViewMode('sync')}
+                        disabled={!hasSyncVideo}
+                        className={`px-4 py-1.5 rounded-lg text-[10px] uppercase tracking-widest font-bold transition-all ${
+                            viewMode === 'sync'
+                                ? 'bg-primary text-on-primary shadow-lg shadow-primary/20'
+                                : hasSyncVideo
+                                    ? 'text-on-surface-variant hover:text-on-surface cursor-pointer'
+                                    : 'text-on-surface-variant/40 cursor-not-allowed'
+                        }`}
+                    >
+                        Sync View
+                    </button>
+                    <button
+                        onClick={() => hasSideVideo && setViewMode('side')}
+                        disabled={!hasSideVideo}
+                        className={`px-4 py-1.5 rounded-lg text-[10px] uppercase tracking-widest font-bold transition-all ${
+                            viewMode === 'side'
+                                ? 'bg-primary text-on-primary shadow-lg shadow-primary/20'
+                                : hasSideVideo
+                                    ? 'text-on-surface-variant hover:text-on-surface cursor-pointer'
+                                    : 'text-on-surface-variant/40 cursor-not-allowed'
+                        }`}
+                    >
+                        Side-by-Side
+                    </button>
+                </div>
             </div>
             
-            <div className="mt-10 lg:mt-0 relative w-full rounded-2xl overflow-hidden glass-panel border border-outline-variant/30 flex justify-center items-center min-h-[400px]">
+            <div className="mt-16 relative w-full rounded-2xl overflow-hidden glass-panel border border-outline-variant/30 flex justify-center items-center min-h-[400px]">
                 {isVideo ? (
-                    <video src={task?.resultFileUrl!} controls autoPlay muted loop className="w-full h-full object-contain max-h-[600px]" />
+                    <video
+                        key={viewMode}
+                        src={currentVideoUrl!}
+                        controls
+                        autoPlay
+                        muted
+                        loop
+                        className="w-full h-full object-contain max-h-[600px]"
+                    />
                 ) : (
                    task?.resultFileUrl ? (
                       <img src={task.resultFileUrl} alt="Result Visual" className="w-full h-full object-contain max-h-[600px] border border-primary/10" />
@@ -176,7 +230,7 @@ export default function Result() {
                 <div className="absolute -top-12 -right-12 w-48 h-48 bg-primary/10 blur-[80px] rounded-full"></div>
                 <h3 className="text-xs uppercase tracking-[0.2em] text-on-surface-variant font-bold mb-8">Performance Index</h3>
                 <div className="flex items-baseline gap-2 mb-4">
-                    <span className="text-8xl font-headline font-bold tracking-tighter text-glow text-primary">{score}</span>
+                    <span className="text-8xl font-headline font-bold tracking-tighter text-glow text-primary">{score.toFixed(2)}</span>
                     <span className="text-2xl font-headline text-on-surface-variant">/100</span>
                 </div>
                 

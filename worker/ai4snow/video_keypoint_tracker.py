@@ -2457,10 +2457,25 @@ def draw_advanced_visuals(frame, trajectory_points, toe_frames, heel_frames, cur
     pil_img = cv2_to_pil(frame)
     draw = ImageDraw.Draw(pil_img, 'RGBA')
 
-    try:
-        font = ImageFont.truetype('/System/Library/Fonts/Hiragino Sans GB.ttc', 24)
-        font_small = ImageFont.truetype('/System/Library/Fonts/Hiragino Sans GB.ttc', 20)
-    except:
+    # 自动适配系统字体以支持中文渲染
+    font_paths = [
+        'C:/Windows/Fonts/msyh.ttc',             # Windows 微软雅黑
+        'C:/Windows/Fonts/simhei.ttf',           # Windows 黑体
+        '/System/Library/Fonts/Hiragino Sans GB.ttc', # macOS
+        '/usr/share/fonts/truetype/droid/DroidSansFallbackFull.ttf' # Linux
+    ]
+    
+    font = None
+    for path in font_paths:
+        if os.path.exists(path):
+            try:
+                font = ImageFont.truetype(path, 24)
+                font_small = ImageFont.truetype(path, 20)
+                break
+            except:
+                continue
+    
+    if font is None:
         font = ImageFont.load_default()
         font_small = font
 

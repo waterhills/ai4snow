@@ -52,7 +52,7 @@ def fetch_pending_task() -> dict | None:
     return None
 
 def download_file(file_key: str, save_path: Path) -> bool:
-    url = f"{API_BASE_URL}/uploads/{file_key}"
+    url = f"{API_BASE_URL}/uploads/inputs/{file_key}"
     print(f"  📥 正在下载视频: {url}")
     try:
         resp = requests.get(url, stream=True, timeout=60)
@@ -139,9 +139,14 @@ def upload_result_file(file_path: Path, new_name: str) -> str | None:
         print(f"  ❌ 网络上传过程出现异常: {e}")
     return None
 
-def report_success(task_id: str, result_file_key: str, result_json: dict):
+def report_success(task_id: str, result_file_key: str, result_file_key2: str | None, result_json: dict):
     url = f"{API_BASE_URL}/api/internal/callback/task-complete"
-    payload = {"taskId": task_id, "resultFileKey": result_file_key, "resultJson": result_json}
+    payload = {
+        "taskId": task_id,
+        "resultFileKey": result_file_key,
+        "resultFileKey2": result_file_key2,
+        "resultJson": result_json
+    }
     try:
         requests.post(url, headers=HEADERS, json=payload, timeout=10)
     except Exception: pass
@@ -167,11 +172,14 @@ def process_task(task: dict):
         res = run_pipeline(input_video, Path(file_key).stem, output_root)
         if res["success"]:
             run_name = Path(file_key).stem
+            run_dir = output_root / run_name
             # 找到分析的产物 JSON 和视频
-            review_dir = output_root / run_name / "review"
+            review_dir = run_dir / "review"
             metrics_json = review_dir / "pressure_curve_metrics.json"
-            sync_video = review_dir / "pressure_sync_video.mp4"
-            
+            # pipeline 输出的文件都在 run_dir 下（非 review 子目录）
+            sync_video = run_dir / f"{run_name}_pressure_sync.mp4"
+            side_by_side_video = run_dir / f"{run_name}_side_by_side.mp4"
+
             result_data = {"score": 85, "msg": "分析成功"}
             if metrics_json.exists():
                 import json
@@ -181,20 +189,32 @@ def process_task(task: dict):
                 except:
                     pass
 
-            result_file_key = f"result_{file_key}" # 预设文件名
+            # 为上报做准备
+            result_key1 = None
+            result_key2 = None
+
+            # 1. 优先处理：全功能同步分析视频 (Primary)
             if sync_video.exists():
-                h264_video = recode_to_h264(sync_video)
-                server_key = upload_result_file(h264_video, result_file_key)
-                if server_key: result_file_key = server_key
-            else:
-                fallback_video = output_root / run_name / f"{run_name}_side_by_side.mp4"
-                if fallback_video.exists():
-                    h264_video = recode_to_h264(fallback_video)
-                    server_key = upload_result_file(h264_video, result_file_key)
-                    if server_key: result_file_key = server_key
-            
-            report_success(task_id, result_file_key, result_data)
-            print(f"✅ 任务完成！已成功上报: {result_file_key}")
+                h264_1 = recode_to_h264(sync_video)
+                result_key1 = upload_result_file(h264_1, f"result_sync_{file_key}")
+
+            # 2. 次要处理：双窗对比视频 (Secondary)
+            if side_by_side_video.exists():
+                h264_2 = recode_to_h264(side_by_side_video)
+                result_key2 = upload_result_file(h264_2, f"result_side_{file_key}")
+
+            # 兜底：如果没找到同步视频，尝试把双窗对比提升为主视频
+            if not result_key1 and result_key2:
+                result_key1 = result_key2
+                result_key2 = None
+
+            if not result_key1:
+                print("  ❌ 未找到任何结果视频可上传")
+                report_failure(task_id, "未能生成结果视频文件")
+                return
+
+            report_success(task_id, result_key1, result_key2, result_data)
+            print(f"✅ 任务完成！已成功上报双路视频数据")
         else:
             print(f"❌ 任务失败原因: {res.get('error')}")
             report_failure(task_id, f"分析流水线出错: {res.get('error')}")

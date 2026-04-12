@@ -25,7 +25,8 @@ router.use(verifyInternalKey);
 // 配置结果文件上传存储
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => {
-    cb(null, path.resolve(config.uploadDir));
+    const resultsDir = path.join(path.resolve(config.uploadDir), 'results');
+    cb(null, resultsDir);
   },
   filename: (_req, file, cb) => {
     const ext = path.extname(file.originalname);
@@ -85,7 +86,7 @@ router.get('/callback/pending-tasks', async (req, res) => {
 // Worker 通知：任务完成
 router.post('/callback/task-complete', async (req, res) => {
   try {
-    const { taskId, resultFileKey, resultJson } = req.body;
+    const { taskId, resultFileKey, resultFileKey2, resultJson } = req.body;
 
     if (!taskId) {
       res.status(400).json({ error: 'Missing taskId' });
@@ -103,6 +104,7 @@ router.post('/callback/task-complete', async (req, res) => {
       data: {
         status: 'COMPLETED',
         resultFileKey: resultFileKey || null,
+        resultFileKey2: resultFileKey2 || null,
         resultJson: resultJson ? JSON.stringify(resultJson) : null,
         completedAt: new Date(),
       },
