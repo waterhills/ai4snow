@@ -15,11 +15,12 @@ import { ensureUploadDir } from './services/storage';
 ensureUploadDir();
 
 const app = express();
+const isProduction = process.env.NODE_ENV === 'production';
 
 // ===== 中间件 =====
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" },
-  contentSecurityPolicy: {
+  contentSecurityPolicy: isProduction ? false : {
     directives: {
       ...helmet.contentSecurityPolicy.getDefaultDirectives(),
       "media-src": ["'self'", "*"],
@@ -28,10 +29,12 @@ app.use(helmet({
   },
 }));
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:5174'], // Vite 开发服务器
+  origin: isProduction
+    ? false  // 生产环境同源，不需要 CORS
+    : ['http://localhost:5173', 'http://localhost:5174'],
   credentials: true,
 }));
-app.use(morgan('dev'));
+app.use(morgan(isProduction ? 'combined' : 'dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -49,5 +52,27 @@ app.use('/api/internal', callbackRoutes); // Worker 回调 (内部)
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
+
+// ===== 生产环境：托管前端静态文件 =====
+if (isProduction) {
+  const clientDist = path.join(__dirname, '../../client/dist');
+  const adminDist = path.join(__dirname, '../../admin/dist');
+
+  // 托管 admin 构建产物
+  app.use('/admin', express.static(adminDist));
+
+  // 托管 client 构建产物
+  app.use(express.static(clientDist));
+
+  // Admin SPA fallback (包括 /admin, /admin/, /admin/*)
+  app.get(/^\/admin(\/.*)?$/, (_req, res) => {
+    res.sendFile(path.join(adminDist, 'index.html'));
+  });
+
+  // Client SPA fallback
+  app.get('*', (_req, res) => {
+    res.sendFile(path.join(clientDist, 'index.html'));
+  });
+}
 
 export default app;

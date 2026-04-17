@@ -13,10 +13,7 @@
 ssh -p 4066 root@103.251.89.147
 ```
 
-**从 Mac 自动登录脚本**（已创建在桌面）
-```bash
-/Users/murphy/Desktop/vps_login.sh
-```
+
 
 ---
 

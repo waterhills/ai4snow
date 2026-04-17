@@ -1,6 +1,15 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { taskApi } from '../services/api';
+
+interface TaskListItem {
+  id: string;
+  status: string;
+  inputFileKey: string;
+  resultFileKey: string | null;
+  createdAt: string;
+  completedAt: string | null;
+}
 
 interface TaskDetail {
   id: string;
@@ -15,28 +24,160 @@ interface TaskDetail {
   resultFileUrl2: string | null;
 }
 
-export default function Result() {
+const statusMap: Record<string, { label: string; colorClass: string; icon: string }> = {
+  PENDING: { label: 'Pending', colorClass: 'border-l-warning', icon: 'hourglass_empty' },
+  PROCESSING: { label: 'Processing', colorClass: 'border-l-secondary', icon: 'sync' },
+  COMPLETED: { label: 'Completed', colorClass: 'border-l-primary', icon: 'check_circle' },
+  FAILED: { label: 'Failed', colorClass: 'border-l-error', icon: 'error' },
+};
+
+const formatShortDate = (dateStr: string) => {
+  const d = new Date(dateStr);
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return { month: months[d.getMonth()], day: d.getDate().toString().padStart(2, '0') };
+};
+
+// ===== 历史记录列表（无 id 时） =====
+function TaskList() {
+  const [tasks, setTasks] = useState<TaskListItem[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setLoading(true);
+    taskApi.list(page, 10)
+      .then((res) => { setTasks(res.data.tasks); setTotal(res.data.total); })
+      .catch((err) => console.error('加载失败:', err))
+      .finally(() => setLoading(false));
+  }, [page]);
+
+  const totalPages = Math.ceil(total / 10);
+
+  const handleDelete = async (e: React.MouseEvent, taskId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!confirm('确定要删除这条分析记录吗？')) return;
+    try {
+      await taskApi.delete(taskId);
+      taskApi.list(page, 10)
+        .then((res) => { setTasks(res.data.tasks); setTotal(res.data.total); })
+        .catch(() => {});
+    } catch (err) {
+      console.error('删除失败:', err);
+    }
+  };
+
+  return (
+    <main className="pt-32 pb-20 px-6 max-w-4xl mx-auto min-h-screen">
+      <div className="mb-10">
+        <h1 className="text-5xl md:text-6xl font-headline font-bold tracking-tighter leading-none uppercase mb-4">ANALYSIS <span className="text-primary">RESULTS</span></h1>
+        <p className="text-on-surface-variant">Reviewing your processed kinetic sequences.</p>
+      </div>
+
+      {loading ? (
+        <div className="py-20 flex flex-col items-center justify-center">
+          <div className="w-10 h-10 border-2 border-primary border-t-transparent rounded-full animate-spin mb-4"></div>
+          <span className="text-on-surface-variant uppercase tracking-widest text-xs">Querying Database...</span>
+        </div>
+      ) : tasks.length === 0 ? (
+        <div className="text-center py-20 bg-surface-container-highest/20 rounded-xl border border-outline-variant/5 border-dashed">
+          <span className="material-symbols-outlined text-6xl text-outline-variant mb-4">analytics</span>
+          <h3 className="text-xl font-bold mb-2">No sequences found</h3>
+          <p className="text-on-surface-variant text-sm mb-6 max-w-sm mx-auto">You haven't uploaded any footage to the Glacial Engine. Start your first analysis to see data here.</p>
+          <Link to="/upload" className="px-6 py-3 border border-primary/40 text-primary font-bold rounded hover:bg-primary/5 transition-all text-sm uppercase tracking-widest">
+            Initialize Upload
+          </Link>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {tasks.map((task) => {
+            const date = formatShortDate(task.createdAt);
+            const statusInfo = statusMap[task.status] || { label: task.status, colorClass: 'border-l-outline-variant', icon: 'help' };
+            const scoreLabel = task.status === 'COMPLETED' ? 'READY' : 'N/A';
+            return (
+              <Link to={`/results/${task.id}`} key={task.id} className={`block flex items-center justify-between p-4 bg-surface-container-low rounded-lg border-l-2 ${statusInfo.colorClass} group hover:bg-surface-container-high transition-colors`}>
+                <div className="flex items-center gap-6">
+                  <div className="text-center w-12 hidden sm:block">
+                    <span className="block text-xs text-on-surface-variant font-bold uppercase tracking-widest">{date.month}</span>
+                    <span className="block text-xl font-headline font-bold">{date.day}</span>
+                  </div>
+                  <div>
+                    <h3 className="text-on-surface font-medium truncate max-w-[200px] md:max-w-md">
+                      {task.inputFileKey.split('.').pop()?.toUpperCase()} SEQUENCE_{task.id.slice(0,6)}
+                    </h3>
+                    <p className="text-xs text-on-surface-variant mt-1 font-mono uppercase">
+                      <span className="material-symbols-outlined text-[14px] inline-block mr-1">{statusInfo.icon}</span>
+                      Status: {statusInfo.label}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="text-right hidden sm:block">
+                    <span className="block text-[10px] text-on-surface-variant uppercase tracking-widest mb-1">State</span>
+                    <span className={`font-headline font-bold text-lg ${task.status === 'COMPLETED' ? 'text-primary' : task.status === 'FAILED' ? 'text-error' : 'text-secondary'}`}>
+                      {scoreLabel}
+                    </span>
+                  </div>
+                  <button
+                    onClick={(e) => handleDelete(e, task.id)}
+                    className="w-10 h-10 rounded-full bg-surface-lowest flex items-center justify-center border border-outline-variant/20 hover:border-error/50 hover:bg-error/10 transition-colors"
+                    title="删除记录"
+                  >
+                    <span className="material-symbols-outlined text-on-surface-variant hover:text-error transition-colors" style={{ fontSize: '20px' }}>delete</span>
+                  </button>
+                  <div className="w-10 h-10 rounded-full bg-surface-lowest flex items-center justify-center border border-outline-variant/20 group-hover:border-primary/50 transition-colors">
+                    <span className="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors">chevron_right</span>
+                  </div>
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+      )}
+
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center gap-4 mt-8 pt-4 border-t border-outline-variant/10">
+          <button
+            onClick={() => setPage(p => Math.max(1, p - 1))}
+            disabled={page === 1}
+            className="px-4 py-2 bg-surface-container border border-outline-variant/30 rounded text-xs uppercase font-bold tracking-widest hover:bg-surface-variant disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            Prev
+          </button>
+          <span className="text-on-surface-variant text-sm font-mono">{page} / {totalPages}</span>
+          <button
+            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+            disabled={page === totalPages}
+            className="px-4 py-2 bg-surface-container border border-outline-variant/30 rounded text-xs uppercase font-bold tracking-widest hover:bg-surface-variant disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            Next
+          </button>
+        </div>
+      )}
+    </main>
+  );
+}
+
+// ===== 单条任务详情（有 id 时） =====
+function TaskDetail() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [task, setTask] = useState<TaskDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const hasSyncVideo = !!task?.resultFileUrl;
   const hasSideVideo = !!task?.resultFileUrl2;
   const [viewMode, setViewMode] = useState<'sync' | 'side'>('sync');
 
-  // 根据可用视频自动切换：如果没有 sync 视频，默认切到 side
   useEffect(() => {
     if (task?.status === 'COMPLETED' && !hasSyncVideo && hasSideVideo && viewMode === 'sync') {
       setViewMode('side');
     }
   }, [task?.status, hasSyncVideo, hasSideVideo]);
 
-  // 轮询机制
   useEffect(() => {
-    if (!id) {
-       setLoading(false);
-       return;
-    }
-    
+    if (!id) { setLoading(false); return; }
+
     let timer: number;
     let isMounted = true;
 
@@ -44,7 +185,6 @@ export default function Result() {
       try {
         const res = await taskApi.getStatus(id);
         if (isMounted) {
-          // 如果任务刚完成，我们需要获取一次全量详情（包括 JSON 和 URL）
           if (res.data.status === 'COMPLETED') {
             const detailRes = await taskApi.get(id);
             setTask(detailRes.data);
@@ -64,37 +204,17 @@ export default function Result() {
     };
 
     fetchStatus();
-
-    return () => {
-      isMounted = false;
-      if (timer) window.clearTimeout(timer);
-    };
+    return () => { isMounted = false; if (timer) window.clearTimeout(timer); };
   }, [id]);
 
-  if (!id) {
-     return (
-        <main className="pt-32 pb-20 px-6 max-w-4xl mx-auto min-h-screen flex flex-col items-center">
-            <div className="text-center py-32 w-full glass-panel border border-outline-variant/20 rounded-2xl">
-               <span className="material-symbols-outlined text-6xl text-outline-variant mb-6" style={{ fontVariationSettings: "'FILL' 0" }}>target</span>
-               <h2 className="font-headline text-3xl font-bold uppercase tracking-widest text-on-surface mb-4">No Sequence Selected</h2>
-               <p className="text-on-surface-variant max-w-md mx-auto mb-8">Deployments and telemetry are accessible via your operative profile. Please select a specific Sequence record to view the analytical matrices.</p>
-               <Link to="/pricing" className="px-8 py-3 bg-gradient-to-r from-primary/80 to-primary-container text-on-primary-fixed rounded-lg font-bold uppercase tracking-widest hover:brightness-110 transition-all">
-                  Access History Array
-               </Link>
-            </div>
-        </main>
-     );
-  }
-
   if (!task && !loading) {
-     return (
-        <div className="flex justify-center items-center h-screen bg-background text-on-surface font-headline">
-           <h2 className="text-xl tracking-widest text-error">Record Not Found or System Error.</h2>
-        </div>
-     );
+    return (
+      <div className="flex justify-center items-center h-screen bg-background text-on-surface font-headline">
+        <h2 className="text-xl tracking-widest text-error">Record Not Found or System Error.</h2>
+      </div>
+    );
   }
 
-  // --- RENDERING BASED ON STATUS --- //
   if (task?.status === 'PENDING' || task?.status === 'PROCESSING' || loading) {
     return (
       <main className="pt-32 pb-20 px-6 max-w-4xl mx-auto min-h-screen flex flex-col justify-center items-center">
@@ -102,13 +222,11 @@ export default function Result() {
             <div className="absolute inset-x-0 top-0 h-1 bg-surface-lowest">
                <div className="h-full bg-primary w-2/3 animate-[pulse_2s_ease-in-out_infinite]"></div>
             </div>
-            
             <div className="text-center mb-8">
                <span className="material-symbols-outlined text-6xl text-primary mb-4 animate-spin" style={{ animationDuration: '4s' }}>radar</span>
                <h2 className="font-headline text-2xl font-bold uppercase tracking-widest text-on-surface">Kinematics Engaged</h2>
                <p className="text-on-surface-variant uppercase text-[10px] mt-2 font-mono">Parsing telemetry sequence {id?.slice(0,8)}...</p>
             </div>
-
             <div className="space-y-4">
                <div className="bg-surface-lowest p-4 rounded border border-outline-variant/10 flex justify-between items-center">
                   <span className="text-xs uppercase tracking-widest text-on-surface-variant font-bold">Neural Engine</span>
@@ -125,19 +243,18 @@ export default function Result() {
   }
 
   if (task?.status === 'FAILED') {
-     return (
-        <main className="pt-32 pb-20 px-6 max-w-4xl mx-auto min-h-screen flex flex-col justify-center items-center">
-           <div className="w-full max-w-md bg-error-container/10 p-8 rounded-2xl border border-error/30 text-center">
-              <span className="material-symbols-outlined text-6xl text-error mb-4">cancel</span>
-              <h2 className="font-headline text-2xl font-bold uppercase tracking-widest text-error mb-4">Compute Failure</h2>
-              <p className="text-on-surface-variant text-sm mb-8">The logic core failed to sequence the uploaded telemetry. Token refunded.</p>
-              <Link to="/pricing" className="px-8 py-3 bg-error text-on-error font-bold rounded uppercase tracking-widest hover:bg-error/80 transition-colors">Return to Base</Link>
-           </div>
-        </main>
-     );
+    return (
+      <main className="pt-32 pb-20 px-6 max-w-4xl mx-auto min-h-screen flex flex-col justify-center items-center">
+         <div className="w-full max-w-md bg-error-container/10 p-8 rounded-2xl border border-error/30 text-center">
+            <span className="material-symbols-outlined text-6xl text-error mb-4">cancel</span>
+            <h2 className="font-headline text-2xl font-bold uppercase tracking-widest text-error mb-4">Compute Failure</h2>
+            <p className="text-on-surface-variant text-sm mb-8">The logic core failed to sequence the uploaded telemetry. Token refunded.</p>
+            <button onClick={() => navigate('/results')} className="px-8 py-3 bg-error text-on-error font-bold rounded uppercase tracking-widest hover:bg-error/80 transition-colors">Return to Results</button>
+         </div>
+      </main>
+    );
   }
 
-  // --- SUCCESS STATE: RENDERING RESULTS LAYER --- //
   const score = task?.resultJson?.posture_score || 0;
   const currentVideoUrl = viewMode === 'sync' ? task?.resultFileUrl : task?.resultFileUrl2;
   const isVideo = !!currentVideoUrl && currentVideoUrl.match(/\.(mp4|webm|mov)(\?.*)?$/i);
@@ -152,16 +269,13 @@ export default function Result() {
           </div>
           <h1 className="text-5xl md:text-6xl font-headline font-bold tracking-tighter leading-none uppercase">ANALYSIS <span className="text-primary">RESULTS</span></h1>
         </div>
-        <Link to="/pricing" className="flex items-center gap-3 px-8 py-4 bg-gradient-to-br from-primary to-primary-container text-on-primary-fixed font-bold rounded-xl active:scale-95 transition-all shadow-[0_0_20px_rgba(0,210,255,0.3)] hover:shadow-[0_0_30px_rgba(0,210,255,0.5)] uppercase tracking-wider text-sm">
+        <button onClick={() => navigate('/results')} className="flex items-center gap-3 px-8 py-4 bg-gradient-to-br from-primary to-primary-container text-on-primary-fixed font-bold rounded-xl active:scale-95 transition-all shadow-[0_0_20px_rgba(0,210,255,0.3)] hover:shadow-[0_0_30px_rgba(0,210,255,0.5)] uppercase tracking-wider text-sm">
            Return Array
-        </Link>
+        </button>
       </header>
 
-      {/* Bento Grid */}
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-        {/* Visual Map */}
         <div className="md:col-span-8 group relative overflow-hidden rounded-xl bg-surface-container-low border border-outline-variant/15 p-8 transition-all flex flex-col justify-center items-center">
-            {/* View Selector Overlay */}
             <div className="absolute top-8 left-8 right-8 z-20 flex justify-between items-start pointer-events-none">
                 <div className="bg-black/40 backdrop-blur px-4 py-2 rounded-lg border border-primary/20">
                     <h3 className="text-[10px] uppercase tracking-[0.2em] text-primary font-bold mb-1">Visual Matrix</h3>
@@ -199,7 +313,7 @@ export default function Result() {
                     </button>
                 </div>
             </div>
-            
+
             <div className="mt-16 relative w-full rounded-2xl overflow-hidden glass-panel border border-outline-variant/30 flex justify-center items-center min-h-[400px]">
                 {isVideo ? (
                     <video
@@ -224,7 +338,6 @@ export default function Result() {
             </div>
         </div>
 
-        {/* Scoring */}
         <div className="md:col-span-4 flex flex-col gap-6">
             <div className="bg-surface-container-high rounded-xl p-8 border border-outline-variant/15 flex-1 relative overflow-hidden">
                 <div className="absolute -top-12 -right-12 w-48 h-48 bg-primary/10 blur-[80px] rounded-full"></div>
@@ -233,11 +346,11 @@ export default function Result() {
                     <span className="text-8xl font-headline font-bold tracking-tighter text-glow text-primary">{score.toFixed(2)}</span>
                     <span className="text-2xl font-headline text-on-surface-variant">/100</span>
                 </div>
-                
+
                 <p className="text-on-surface leading-relaxed text-sm mb-8 font-medium italic border-l-2 border-primary pl-4">
                    "{task?.resultJson?.feedback || 'Telemetry recorded successfully.'}"
                 </p>
-                
+
                 <div className="space-y-4">
                    <div className="flex justify-between items-center p-4 bg-surface-container-highest/50 rounded-lg border border-outline-variant/10">
                        <div className="flex items-center gap-3">
@@ -257,7 +370,6 @@ export default function Result() {
             </div>
         </div>
 
-        {/* Extra Json Data rendering as mock log */}
         {task?.resultJson?.details && (
             <div className="md:col-span-12">
                <div className="bg-surface-container-high/50 rounded-xl border border-outline-variant/15 overflow-hidden p-8">
@@ -271,4 +383,10 @@ export default function Result() {
       </div>
     </main>
   );
+}
+
+// ===== 路由入口：有 id 显示详情，无 id 显示列表 =====
+export default function Result() {
+  const { id } = useParams<{ id: string }>();
+  return id ? <TaskDetail /> : <TaskList />;
 }

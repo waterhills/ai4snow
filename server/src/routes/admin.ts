@@ -96,7 +96,8 @@ router.patch('/users/:id/credits', async (req: AuthRequest, res) => {
       return;
     }
 
-    const user = await prisma.user.findUnique({ where: { id: req.params.id } });
+    const userId = req.params.id as string;
+    const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
       res.status(404).json({ error: '用户不存在' });
       return;
@@ -111,7 +112,7 @@ router.patch('/users/:id/credits', async (req: AuthRequest, res) => {
     // 事务：更新积分 + 记录操作
     const [updated] = await prisma.$transaction([
       prisma.user.update({
-        where: { id: req.params.id },
+        where: { id: userId },
         data: { credits: { increment: credits } },
         select: { id: true, email: true, name: true, credits: true },
       }),
@@ -165,7 +166,8 @@ router.get('/tasks', async (req: AuthRequest, res) => {
 // 重试失败任务
 router.post('/tasks/:id/retry', async (req: AuthRequest, res) => {
   try {
-    const task = await prisma.task.findUnique({ where: { id: req.params.id } });
+    const taskId = req.params.id as string;
+    const task = await prisma.task.findUnique({ where: { id: taskId } });
     if (!task) {
       res.status(404).json({ error: '任务不存在' });
       return;

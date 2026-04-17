@@ -20,7 +20,7 @@ const customTheme = {
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <ConfigProvider theme={customTheme} locale={zhCN}>
-      <BrowserRouter>
+      <BrowserRouter basename="/admin">
         <App />
       </BrowserRouter>
     </ConfigProvider>

@@ -118,8 +118,9 @@ router.get('/', authMiddleware, async (req: AuthRequest, res) => {
 // 获取单个任务详情
 router.get('/:id', authMiddleware, async (req: AuthRequest, res) => {
   try {
+    const taskId = req.params.id as string;
     const task = await prisma.task.findFirst({
-      where: { id: req.params.id, userId: req.userId },
+      where: { id: taskId, userId: req.userId },
     });
 
     if (!task) {
@@ -147,8 +148,9 @@ router.get('/:id', authMiddleware, async (req: AuthRequest, res) => {
 // 轻量级状态轮询接口
 router.get('/:id/status', authMiddleware, async (req: AuthRequest, res) => {
   try {
+    const taskId = req.params.id as string;
     const task = await prisma.task.findFirst({
-      where: { id: req.params.id, userId: req.userId },
+      where: { id: taskId, userId: req.userId },
       select: { id: true, status: true },
     });
 
@@ -166,8 +168,9 @@ router.get('/:id/status', authMiddleware, async (req: AuthRequest, res) => {
 // 删除任务
 router.delete('/:id', authMiddleware, async (req: AuthRequest, res) => {
   try {
+    const taskId = req.params.id as string;
     const task = await prisma.task.findFirst({
-      where: { id: req.params.id, userId: req.userId },
+      where: { id: taskId, userId: req.userId },
     });
 
     if (!task) {

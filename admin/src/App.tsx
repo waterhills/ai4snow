@@ -23,7 +23,7 @@ function isAuthenticated(): boolean {
 // 路由守卫
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   if (!isAuthenticated()) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="login" replace />;
   }
   return <>{children}</>;
 }
@@ -39,7 +39,7 @@ function AdminLayout() {
   const handleLogout = () => {
     localStorage.removeItem('admin_token');
     localStorage.removeItem('admin_user');
-    navigate('/login');
+    navigate('login');
   };
 
   // 根据路径选中菜单项

@@ -70,8 +70,8 @@ export default function Upload() {
     setUploading(true);
     setError('');
     try {
-      await taskApi.upload(file, (percent) => setProgress(percent));
-      navigate('/pricing');
+      const res = await taskApi.upload(file, (percent) => setProgress(percent));
+      navigate(`/results/${res.data.task.id}`);
     } catch (err: any) {
       setError(err.response?.data?.error || 'Ingestion failed, verify network uplink.');
       setUploading(false);
