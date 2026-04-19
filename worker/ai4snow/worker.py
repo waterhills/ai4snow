@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """
-Glacial Lab Worker — Mac Mini / 本地调试版
+Glacial Lab Worker — SkiVision 推理 Worker
 ============================================
+轮询服务器获取待处理任务，执行 YOLO/RTMPose 推理后上报结果。
+
+配置方式：通过环境变量或 .env 文件设置（优先使用 python-dotenv）。
 """
 from __future__ import annotations
 
@@ -15,20 +18,13 @@ from pathlib import Path
 import requests
 
 # ============================================================
-# 配置区：已为你配好本地联调参数
+# 配置区：优先读取环境变量，否则使用默认值
 # ============================================================
 
-# 本地后端地址
-API_BASE_URL = "http://127.0.0.1:3000"
-
-# 与 server/.env 一致的暗号
-INTERNAL_API_KEY = "ski-internal-api-key-change-in-production"
-
-# 分析流水线模式
-PIPELINE_ID = "jsba"
-
-# 轮询间隔（秒）
-POLL_INTERVAL = 5
+API_BASE_URL = os.getenv("API_BASE_URL", "http://127.0.0.1:3000")
+INTERNAL_API_KEY = os.getenv("INTERNAL_API_KEY", "ski-internal-api-key-change-in-production")
+PIPELINE_ID = os.getenv("PIPELINE_ID", "jsba")
+POLL_INTERVAL = int(os.getenv("POLL_INTERVAL", "5"))
 
 # 路径配置
 AI4SNOW_ROOT = Path(__file__).resolve().parent
@@ -222,8 +218,9 @@ def process_task(task: dict):
         report_failure(task_id, "下载视频失败")
 
 def main():
-    print("🚀 SkiVision Worker (Local Test Mode) 已启动")
+    print("🚀 SkiVision Worker 已启动")
     print(f"🔗 连接地址: {API_BASE_URL}")
+    print(f"🔧 流水线: {PIPELINE_ID} | 轮询间隔: {POLL_INTERVAL}s")
     print("🎧 正在等待任务...")
     
     while True:

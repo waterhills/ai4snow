@@ -21,28 +21,40 @@
 ### 1. 安装依赖
 
 ```bash
-# 创建虚拟环境（推荐）
 python3 -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
-
-# 安装依赖
 pip install -r requirements.txt
 ```
 
-### 2. 处理视频
+### 2. 配置环境变量
+
+在 `worker/ai4snow/` 目录下创建 `.env` 文件：
+
+```env
+API_BASE_URL=http://127.0.0.1:3000
+INTERNAL_API_KEY=ski-internal-api-key-change-in-production
+PIPELINE_ID=jsba
+POLL_INTERVAL=5
+```
+
+生产环境请修改为实际的 Server 地址和 API Key。
+
+### 3. 启动 Worker
 
 ```bash
-# 基础用法
+python worker.py
+```
+
+Worker 会持续轮询 Server 获取待处理任务，执行推理后自动上报结果。
+
+### 4. 单独处理视频（调试用）
+
+```bash
 python run_ski_pipeline.py /path/to/your/video.mp4
-
-# 指定任务名
-python run_ski_pipeline.py /path/to/video.mp4 --name my_session
-
-# 强制重新计算
 python run_ski_pipeline.py /path/to/video.mp4 --name my_session --force
 ```
 
-### 3. 查看结果
+### 5. 查看结果
 
 输出文件位于 `output/<任务名>/`：
 - `<任务名>_overlay.mp4` - 骨架叠加视频
@@ -50,16 +62,11 @@ python run_ski_pipeline.py /path/to/video.mp4 --name my_session --force
 - `<任务名>_pressure_sync.mp4` - 压力曲线同步视频
 - `review/` - 分析报告和数据
 
-## Web 界面
+## 环境变量说明
 
-### 启动本地服务
-
-```bash
-python backend_api.py
-```
-
-访问 `http://localhost:8765` 使用 Web 界面：
-- 拖拽上传视频
-- 实时查看处理进度
-- 在线预览和下载结果
-
+| 变量 | 默认值 | 说明 |
+|------|--------|------|
+| `API_BASE_URL` | `http://127.0.0.1:3000` | Server 地址 |
+| `INTERNAL_API_KEY` | `ski-internal-api-key-change-in-production` | 与 Server .env 一致 |
+| `PIPELINE_ID` | `jsba` | 分析流水线模式 |
+| `POLL_INTERVAL` | `5` | 轮询间隔（秒） |

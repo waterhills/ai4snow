@@ -111,7 +111,7 @@ Files are served statically at `/uploads/inputs/...` and `/uploads/results/...`.
 - **Evaluators**: `evaluators/` directory with `router.py`, `casi_evaluator.py`, `jsba_evaluator.py` for different skiing standards
 - **Result artifacts**: `pressure_sync_video.mp4` (primary), `{name}_side_by_side.mp4` (secondary), `pressure_curve_metrics.json`
 - **Video transcoding**: Worker re-encodes results to H.264 via FFmpeg (`recode_to_h264()`) for browser compatibility
-- **Config**: `API_BASE_URL`, `INTERNAL_API_KEY`, `PIPELINE_ID`, `POLL_INTERVAL` are constants at the top of `worker.py`
+- **Config**: 通过环境变量配置 `API_BASE_URL`, `INTERNAL_API_KEY`, `PIPELINE_ID`, `POLL_INTERVAL`，支持 `.env` 文件（python-dotenv）
 
 ## Key Patterns
 
