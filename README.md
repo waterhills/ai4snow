@@ -11,8 +11,9 @@ AI4Snow 是一个基于人工智能的滑雪视频分析平台，通过计算机
 在开始之前，请确保您的电脑已安装以下软件：
 - **Node.js**: v18.0 或更高版本
 - **Python**: 3.9 或更高版本
-- **Redis**: 任务队列必需（用于后端与分析引擎通信）
 - **FFmpeg**: 用于视频处理（Worker 依赖）
+
+*注：本项目目前采用轻量化的 HTTP 轮询架构，**无需安装 Redis**。*
 
 ### 2. 安装与配置 (Setup)
 
@@ -73,7 +74,7 @@ pip install -r requirements.txt
 - `/client`: 基于 React + Vite 的用户前端控制台。
 - `/server`: 基于 Node.js + Express + Prisma 的后端 API。
 - `/admin`: 后端管理后台界面。
-- `/worker`: 基于 Python + PyTorch 的视频分析与压力识别引擎。
+- `/worker`: 基于 Python + PyTorch 的视频分析与压力识别引擎（采用 HTTP 轮询模式）。
 - `/server/prisma`: 数据库建模与迁移文件。
 
 ## 🛠️ 协作流程
