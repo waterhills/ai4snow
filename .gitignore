@@ -34,7 +34,7 @@ bower_components
 # node-waf configuration
 .lock-wscript
 
-# Compiled binary addons (https://nodejs.org/api/addons.html)
+# Compiled binary addons (https://nodejs.org/api/addons)
 build/Release
 
 # Dependency directories
@@ -72,6 +72,8 @@ typings/
 .env
 .env.test
 .env.local
+.env.production
+.env.*.local
 
 # parcel-bundler cache (https://parceljs.org/)
 .cache
@@ -106,14 +108,22 @@ dist
 .DS_Store
 Thumbs.db
 
-# ===== AI4SNOW Python & Data =====
-worker/ai4snow/worker_workdir/
-worker/ai4snow/output/
-worker/ai4snow/model/
-worker/ai4snow/input/
-worker/ai4snow/__pycache__/
-worker/ai4snow/.pytest_cache/
+# Editor configs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ===== Python (Worker) =====
+__pycache__/
 *.pyc
+*.pyo
+venv/
+.venv/
+*.egg-info/
+.pytest_cache/
+
+# ===== Database =====
 *.db
 *.sqlite
 *.sqlite3
@@ -121,3 +131,8 @@ worker/ai4snow/.pytest_cache/
 # ===== Server Uploads =====
 server/uploads/
 
+# ===== Worker AI data =====
+worker/ai4snow/worker_workdir/
+worker/ai4snow/output/
+worker/ai4snow/model/
+worker/ai4snow/input/
