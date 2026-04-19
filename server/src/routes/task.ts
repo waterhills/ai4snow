@@ -69,14 +69,22 @@ router.post('/', authMiddleware, upload.single('file'), async (req: AuthRequest,
     });
 
     // 发布到消息队列（异步，不影响响应）
+    // 成功推送到 Redis 后将任务标记为 PROCESSING，防止 HTTP 轮询重复拾取
     const baseUrl = `${req.protocol}://${req.get('host')}`;
     publishTask({
       taskId: task.id,
       inputFileKey: task.inputFileKey,
-      inputFileUrl: `${baseUrl}/uploads/${task.inputFileKey}`,
+      inputFileUrl: `${baseUrl}/uploads/inputs/${task.inputFileKey}`,
       callbackUrl: `${baseUrl}/api/internal/callback`,
       createdAt: task.createdAt.toISOString(),
-    }).catch((err) => console.error('发布任务到队列失败:', err));
+    }).then(async (pushed) => {
+      if (pushed) {
+        await prisma.task.update({
+          where: { id: task.id },
+          data: { status: 'PROCESSING' },
+        }).catch((err) => console.error('更新任务状态为 PROCESSING 失败:', err));
+      }
+    });
 
     res.json({
       task: {

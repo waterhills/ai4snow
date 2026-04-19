@@ -108,6 +108,10 @@ dist
 .DS_Store
 Thumbs.db
 
+# Root markdown files (keep only README.md)
+/*.md
+!/README.md
+
 # Editor configs
 .vscode/
 .idea/
@@ -132,6 +136,7 @@ venv/
 server/uploads/
 
 # ===== Worker AI data =====
+worker/ai4snow/redis/
 worker/ai4snow/worker_workdir/
 worker/ai4snow/output/
 worker/ai4snow/model/

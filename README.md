@@ -2,7 +2,7 @@
 
 AI4Snow 是一个基于人工智能的滑雪视频分析平台，通过计算机视觉技术识别滑雪者的动作并生成压力曲线分析报告，旨在为滑雪爱好者及专业运动员提供科学的训练参考。
 
-## 🚀 快速上手 (Quick Start)
+## 快速上手 (Quick Start)
 
 为了方便协作开发与功能测试，请按照以下步骤在您的本地环境配置项目。
 
@@ -12,8 +12,7 @@ AI4Snow 是一个基于人工智能的滑雪视频分析平台，通过计算机
 - **Node.js**: v18.0 或更高版本
 - **Python**: 3.9 或更高版本
 - **FFmpeg**: 用于视频处理（Worker 依赖）
-
-*注：本项目目前采用轻量化的 HTTP 轮询架构，**无需安装 Redis**。*
+- **Docker**: 用于运行 Redis（任务队列）
 
 ### 2. 安装与配置 (Setup)
 
@@ -34,15 +33,31 @@ npx prisma db push
 npm run db:seed
 ```
 
-#### 第三步：配置分析引擎 (Python Worker)
+#### 第三步：启动 Redis（任务队列）
 ```bash
-cd ../worker/ai4snow
+# 在项目根目录启动 Redis 容器
+docker compose up -d redis
+
+# 在 server/.env 中配置（默认已配置）
+# REDIS_URL="redis://localhost:6379"
+
+# 在 worker/ai4snow/.env 中取消注释
+# REDIS_URL=redis://localhost:6379
+```
+
+> 如果不启动 Redis，系统会自动回退到 HTTP 轮询模式（每 5 秒轮询一次），功能正常但延迟略高。
+
+#### 第四步：配置分析引擎 (Python Worker)
+```bash
+cd worker/ai4snow
 # 创建并激活虚拟环境 (可选)
 # python -m venv venv
 # source venv/bin/activate (Linux/Mac) 或 venv\Scripts\activate (Windows)
 
-# 安装 AI 引擎依赖
+# 安装 AI 引擎依赖（包含 redis、python-dotenv 等）
 pip install -r requirements.txt
+
+# 根据需要编辑 .env 文件配置环境变量
 ```
 
 ### 3. 启动项目 (Running)
@@ -56,9 +71,20 @@ pip install -r requirements.txt
 3. **分析引擎 (Worker)**：
    在 `worker/ai4snow` 目录下运行 `python worker.py`
 
+### 4. 任务分发架构
+
+系统支持两种任务分发模式，通过 `REDIS_URL` 环境变量自动切换：
+
+| 模式 | 条件 | 延迟 | 说明 |
+|------|------|------|------|
+| **Redis 即时推送** | `REDIS_URL` 已配置 | < 1 秒 | Server 通过 Redis List 推送任务，Worker 即时获取 |
+| **HTTP 轮询** | `REDIS_URL` 为空 | 0~5 秒 | Worker 每 5 秒轮询 Server 获取待处理任务 |
+
+结果上传（视频、分析数据）通过 HTTP 回调完成，与任务分发模式无关。
+
 ---
 
-## 🧪 测试账号 (Testing Accounts)
+## 测试账号 (Testing Accounts)
 
 您可以使用以下预设账号直接登录本地运行的项目：
 
@@ -69,15 +95,16 @@ pip install -r requirements.txt
 
 ---
 
-## 📂 项目结构 (Project Structure)
+## 项目结构 (Project Structure)
 
 - `/client`: 基于 React + Vite 的用户前端控制台。
 - `/server`: 基于 Node.js + Express + Prisma 的后端 API。
 - `/admin`: 后端管理后台界面。
-- `/worker`: 基于 Python + PyTorch 的视频分析与压力识别引擎（采用 HTTP 轮询模式）。
+- `/worker`: 基于 Python + PyTorch 的视频分析与压力识别引擎。
 - `/server/prisma`: 数据库建模与迁移文件。
+- `/docker-compose.yml`: Redis 容器配置。
 
-## 🛠️ 协作流程
+## 协作流程
 
 1. **拉取代码**：每次开发前执行 `git pull`。
 2. **提交代码**：完成功能后执行 `git add .` -> `git commit -m "描述"` -> `git push`。

@@ -14,6 +14,9 @@ matplotlib>=3.7.0
 # 网络请求 (Worker 与 Server 通信)
 requests>=2.31.0
 
+# Redis 队列 (任务即时获取，无 Redis 时自动回退到 HTTP 轮询)
+redis>=5.0.0
+
 # 视频转码 (H.264 浏览器兼容)
 imageio-ffmpeg>=0.4.9
 
