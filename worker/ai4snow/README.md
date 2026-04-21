@@ -35,11 +35,9 @@ API_BASE_URL=http://127.0.0.1:3000
 INTERNAL_API_KEY=ski-internal-api-key-change-in-production
 PIPELINE_ID=jsba
 POLL_INTERVAL=5
-REDIS_URL=redis://localhost:6379
 ```
 
-- `REDIS_URL` 留空则自动回退到 HTTP 轮询模式
-- 生产环境请修改为实际的 Server 地址和 API Key
+生产环境请修改为实际的 Server 地址和 API Key。
 
 ### 3. 启动 Worker
 
@@ -47,8 +45,7 @@ REDIS_URL=redis://localhost:6379
 python worker.py
 ```
 
-- 配置了 `REDIS_URL`：通过 Redis BRPOP 即时获取任务
-- 未配置 `REDIS_URL`：每 5 秒轮询 Server 获取待处理任务
+Worker 会持续轮询 Server 获取待处理任务，执行推理后自动上报结果。
 
 ### 4. 单独处理视频（调试用）
 
@@ -72,5 +69,4 @@ python run_ski_pipeline.py /path/to/video.mp4 --name my_session --force
 | `API_BASE_URL` | `http://127.0.0.1:3000` | Server 地址 |
 | `INTERNAL_API_KEY` | `ski-internal-api-key-change-in-production` | 与 Server .env 一致 |
 | `PIPELINE_ID` | `jsba` | 分析流水线模式 |
-| `POLL_INTERVAL` | `5` | HTTP 轮询间隔（秒） |
-| `REDIS_URL` | _(空)_ | Redis 地址，留空回退到 HTTP 轮询 |
+| `POLL_INTERVAL` | `5` | 轮询间隔（秒） |
