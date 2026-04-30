@@ -25,10 +25,10 @@ interface TaskDetail {
 }
 
 const statusMap: Record<string, { label: string; colorClass: string; icon: string }> = {
-  PENDING: { label: 'Pending', colorClass: 'border-l-warning', icon: 'hourglass_empty' },
-  PROCESSING: { label: 'Processing', colorClass: 'border-l-secondary', icon: 'sync' },
-  COMPLETED: { label: 'Completed', colorClass: 'border-l-primary', icon: 'check_circle' },
-  FAILED: { label: 'Failed', colorClass: 'border-l-error', icon: 'error' },
+  PENDING: { label: '待处理', colorClass: 'border-l-warning', icon: 'hourglass_empty' },
+  PROCESSING: { label: '处理中', colorClass: 'border-l-secondary', icon: 'sync' },
+  COMPLETED: { label: '已完成', colorClass: 'border-l-primary', icon: 'check_circle' },
+  FAILED: { label: '失败', colorClass: 'border-l-error', icon: 'error' },
 };
 
 const formatShortDate = (dateStr: string) => {
@@ -71,22 +71,22 @@ function TaskList() {
   return (
     <main className="pt-32 pb-20 px-6 max-w-4xl mx-auto min-h-screen">
       <div className="mb-10">
-        <h1 className="text-5xl md:text-6xl font-headline font-bold tracking-tighter leading-none uppercase mb-4">ANALYSIS <span className="text-primary">RESULTS</span></h1>
-        <p className="text-on-surface-variant">Reviewing your processed kinetic sequences.</p>
+        <h1 className="text-5xl md:text-6xl font-headline font-bold tracking-tighter leading-none uppercase mb-4">分析 <span className="text-primary">结果</span></h1>
+        <p className="text-on-surface-variant">查看您已处理的动力学序列。</p>
       </div>
 
       {loading ? (
         <div className="py-20 flex flex-col items-center justify-center">
           <div className="w-10 h-10 border-2 border-primary border-t-transparent rounded-full animate-spin mb-4"></div>
-          <span className="text-on-surface-variant uppercase tracking-widest text-xs">Querying Database...</span>
+          <span className="text-on-surface-variant uppercase tracking-widest text-xs">正在查询数据库...</span>
         </div>
       ) : tasks.length === 0 ? (
         <div className="text-center py-20 bg-surface-container-highest/20 rounded-xl border border-outline-variant/5 border-dashed">
           <span className="material-symbols-outlined text-6xl text-outline-variant mb-4">analytics</span>
-          <h3 className="text-xl font-bold mb-2">No sequences found</h3>
-          <p className="text-on-surface-variant text-sm mb-6 max-w-sm mx-auto">You haven't uploaded any footage to the Glacial Engine. Start your first analysis to see data here.</p>
+          <h3 className="text-xl font-bold mb-2">未发现序列</h3>
+          <p className="text-on-surface-variant text-sm mb-6 max-w-sm mx-auto">您尚未向冰川引擎上传任何视频。开始您的第一次分析以在此查看数据。</p>
           <Link to="/upload" className="px-6 py-3 border border-primary/40 text-primary font-bold rounded hover:bg-primary/5 transition-all text-sm uppercase tracking-widest">
-            Initialize Upload
+            初始化上传
           </Link>
         </div>
       ) : (
@@ -108,13 +108,13 @@ function TaskList() {
                     </h3>
                     <p className="text-xs text-on-surface-variant mt-1 font-mono uppercase">
                       <span className="material-symbols-outlined text-[14px] inline-block mr-1">{statusInfo.icon}</span>
-                      Status: {statusInfo.label}
+                      状态: {statusInfo.label}
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
                   <div className="text-right hidden sm:block">
-                    <span className="block text-[10px] text-on-surface-variant uppercase tracking-widest mb-1">State</span>
+                    <span className="block text-[10px] text-on-surface-variant uppercase tracking-widest mb-1">状态</span>
                     <span className={`font-headline font-bold text-lg ${task.status === 'COMPLETED' ? 'text-primary' : task.status === 'FAILED' ? 'text-error' : 'text-secondary'}`}>
                       {scoreLabel}
                     </span>
@@ -143,7 +143,7 @@ function TaskList() {
             disabled={page === 1}
             className="px-4 py-2 bg-surface-container border border-outline-variant/30 rounded text-xs uppercase font-bold tracking-widest hover:bg-surface-variant disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            Prev
+            上一页
           </button>
           <span className="text-on-surface-variant text-sm font-mono">{page} / {totalPages}</span>
           <button
@@ -151,7 +151,7 @@ function TaskList() {
             disabled={page === totalPages}
             className="px-4 py-2 bg-surface-container border border-outline-variant/30 rounded text-xs uppercase font-bold tracking-widest hover:bg-surface-variant disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            Next
+            下一页
           </button>
         </div>
       )}
@@ -210,7 +210,7 @@ function TaskDetail() {
   if (!task && !loading) {
     return (
       <div className="flex justify-center items-center h-screen bg-background text-on-surface font-headline">
-        <h2 className="text-xl tracking-widest text-error">Record Not Found or System Error.</h2>
+        <h2 className="text-xl tracking-widest text-error">未找到记录或系统错误。</h2>
       </div>
     );
   }
@@ -224,17 +224,17 @@ function TaskDetail() {
             </div>
             <div className="text-center mb-8">
                <span className="material-symbols-outlined text-6xl text-primary mb-4 animate-spin" style={{ animationDuration: '4s' }}>radar</span>
-               <h2 className="font-headline text-2xl font-bold uppercase tracking-widest text-on-surface">Kinematics Engaged</h2>
-               <p className="text-on-surface-variant uppercase text-[10px] mt-2 font-mono">Parsing telemetry sequence {id?.slice(0,8)}...</p>
+               <h2 className="font-headline text-2xl font-bold uppercase tracking-widest text-on-surface">动作识别中</h2>
+               <p className="text-on-surface-variant uppercase text-[10px] mt-2 font-mono">正在分析视频序列 {id?.slice(0,8)}...</p>
             </div>
             <div className="space-y-4">
                <div className="bg-surface-lowest p-4 rounded border border-outline-variant/10 flex justify-between items-center">
-                  <span className="text-xs uppercase tracking-widest text-on-surface-variant font-bold">Neural Engine</span>
-                  <span className="text-primary font-mono text-xs animate-pulse">Running Compute...</span>
+                  <span className="text-xs uppercase tracking-widest text-on-surface-variant font-bold">神经引擎</span>
+                  <span className="text-primary font-mono text-xs animate-pulse">正在运行计算...</span>
                </div>
                <div className="bg-surface-lowest p-4 rounded border border-outline-variant/10 flex justify-between items-center opacity-50">
-                  <span className="text-xs uppercase tracking-widest text-on-surface-variant font-bold">Spatial Align</span>
-                  <span className="text-on-surface-variant font-mono text-xs">Waiting...</span>
+                  <span className="text-xs uppercase tracking-widest text-on-surface-variant font-bold">空间对齐</span>
+                  <span className="text-on-surface-variant font-mono text-xs">等待中...</span>
                </div>
             </div>
          </div>
@@ -247,9 +247,9 @@ function TaskDetail() {
       <main className="pt-32 pb-20 px-6 max-w-4xl mx-auto min-h-screen flex flex-col justify-center items-center">
          <div className="w-full max-w-md bg-error-container/10 p-8 rounded-2xl border border-error/30 text-center">
             <span className="material-symbols-outlined text-6xl text-error mb-4">cancel</span>
-            <h2 className="font-headline text-2xl font-bold uppercase tracking-widest text-error mb-4">Compute Failure</h2>
-            <p className="text-on-surface-variant text-sm mb-8">The logic core failed to sequence the uploaded telemetry. Token refunded.</p>
-            <button onClick={() => navigate('/results')} className="px-8 py-3 bg-error text-on-error font-bold rounded uppercase tracking-widest hover:bg-error/80 transition-colors">Return to Results</button>
+            <h2 className="font-headline text-2xl font-bold uppercase tracking-widest text-error mb-4">计算失败</h2>
+            <p className="text-on-surface-variant text-sm mb-8">逻辑核心无法对上传的遥测数据进行排序。代币已退还。</p>
+            <button onClick={() => navigate('/results')} className="px-8 py-3 bg-error text-on-error font-bold rounded uppercase tracking-widest hover:bg-error/80 transition-colors">返回结果列表</button>
          </div>
       </main>
     );
@@ -264,13 +264,13 @@ function TaskDetail() {
       <header className="flex flex-col md:flex-row justify-between items-end mb-16 gap-6">
         <div className="space-y-2">
           <div className="flex items-center gap-3">
-             <span className="px-3 py-1 rounded-full bg-primary/10 text-primary text-[10px] uppercase tracking-[0.2em] font-bold border border-primary/20">Archived Record</span>
-             <span className="text-on-surface-variant text-xs uppercase tracking-widest font-medium">Session ID: {id?.slice(0,8).toUpperCase()}</span>
+             <span className="px-3 py-1 rounded-full bg-primary/10 text-primary text-[10px] uppercase tracking-[0.2em] font-bold border border-primary/20">存档记录</span>
+             <span className="text-on-surface-variant text-xs uppercase tracking-widest font-medium">会话 ID: {id?.slice(0,8).toUpperCase()}</span>
           </div>
-          <h1 className="text-5xl md:text-6xl font-headline font-bold tracking-tighter leading-none uppercase">ANALYSIS <span className="text-primary">RESULTS</span></h1>
+          <h1 className="text-5xl md:text-6xl font-headline font-bold tracking-tighter leading-none uppercase">分析 <span className="text-primary">结果</span></h1>
         </div>
         <button onClick={() => navigate('/results')} className="flex items-center gap-3 px-8 py-4 bg-gradient-to-br from-primary to-primary-container text-on-primary-fixed font-bold rounded-xl active:scale-95 transition-all shadow-[0_0_20px_rgba(0,210,255,0.3)] hover:shadow-[0_0_30px_rgba(0,210,255,0.5)] uppercase tracking-wider text-sm">
-           Return Array
+           返回列表
         </button>
       </header>
 
@@ -278,9 +278,9 @@ function TaskDetail() {
         <div className="md:col-span-8 group relative overflow-hidden rounded-xl bg-surface-container-low border border-outline-variant/15 p-8 transition-all flex flex-col justify-center items-center">
             <div className="absolute top-8 left-8 right-8 z-20 flex justify-between items-start pointer-events-none">
                 <div className="bg-black/40 backdrop-blur px-4 py-2 rounded-lg border border-primary/20">
-                    <h3 className="text-[10px] uppercase tracking-[0.2em] text-primary font-bold mb-1">Visual Matrix</h3>
+                    <h3 className="text-[10px] uppercase tracking-[0.2em] text-primary font-bold mb-1">视觉矩阵</h3>
                     <p className="text-lg font-headline font-bold tracking-tight text-on-surface uppercase">
-                        {viewMode === 'sync' ? 'Sync Analysis' : 'Side-by-Side'}
+                        {viewMode === 'sync' ? '同步分析' : '并排对比'}
                     </p>
                 </div>
 
@@ -296,7 +296,7 @@ function TaskDetail() {
                                     : 'text-on-surface-variant/40 cursor-not-allowed'
                         }`}
                     >
-                        Sync View
+                        同步视图
                     </button>
                     <button
                         onClick={() => hasSideVideo && setViewMode('side')}
@@ -309,7 +309,7 @@ function TaskDetail() {
                                     : 'text-on-surface-variant/40 cursor-not-allowed'
                         }`}
                     >
-                        Side-by-Side
+                        并排视图
                     </button>
                 </div>
             </div>
@@ -331,7 +331,7 @@ function TaskDetail() {
                    ) : (
                       <div className="text-outline-variant text-sm uppercase tracking-widest flex flex-col items-center">
                          <span className="material-symbols-outlined text-4xl mb-4">hide_image</span>
-                         No Visual Layer Provided
+                         无视觉图层提供
                       </div>
                    )
                 )}
@@ -341,30 +341,30 @@ function TaskDetail() {
         <div className="md:col-span-4 flex flex-col gap-6">
             <div className="bg-surface-container-high rounded-xl p-8 border border-outline-variant/15 flex-1 relative overflow-hidden">
                 <div className="absolute -top-12 -right-12 w-48 h-48 bg-primary/10 blur-[80px] rounded-full"></div>
-                <h3 className="text-xs uppercase tracking-[0.2em] text-on-surface-variant font-bold mb-8">Performance Index</h3>
+                <h3 className="text-xs uppercase tracking-[0.2em] text-on-surface-variant font-bold mb-8">表现指数</h3>
                 <div className="flex items-baseline gap-2 mb-4">
                     <span className="text-8xl font-headline font-bold tracking-tighter text-glow text-primary">{score.toFixed(2)}</span>
                     <span className="text-2xl font-headline text-on-surface-variant">/100</span>
                 </div>
 
                 <p className="text-on-surface leading-relaxed text-sm mb-8 font-medium italic border-l-2 border-primary pl-4">
-                   "{task?.resultJson?.feedback || 'Telemetry recorded successfully.'}"
+                   "{task?.resultJson?.feedback || '遥测数据记录成功。'}"
                 </p>
 
                 <div className="space-y-4">
                    <div className="flex justify-between items-center p-4 bg-surface-container-highest/50 rounded-lg border border-outline-variant/10">
                        <div className="flex items-center gap-3">
                           <span className="material-symbols-outlined text-primary text-xl">speed</span>
-                          <span className="text-xs uppercase tracking-widest font-bold text-on-surface">Kinetic Form</span>
+                          <span className="text-xs uppercase tracking-widest font-bold text-on-surface">动力形态</span>
                        </div>
                        <span className="text-primary font-headline font-bold">{(score / 100 * 0.95).toFixed(2)}</span>
                    </div>
                    <div className="flex justify-between items-center p-4 bg-surface-container-highest/50 rounded-lg border border-outline-variant/10">
                        <div className="flex items-center gap-3">
                           <span className="material-symbols-outlined text-tertiary text-xl">analytics</span>
-                          <span className="text-xs uppercase tracking-widest font-bold text-on-surface">Algorithmic Shift</span>
+                          <span className="text-xs uppercase tracking-widest font-bold text-on-surface">算法偏差</span>
                        </div>
-                       <span className="text-tertiary font-headline font-bold">{score > 80 ? 'Optimal' : 'Needs Calib.'}</span>
+                       <span className="text-tertiary font-headline font-bold">{score > 80 ? '最优' : '需校准'}</span>
                    </div>
                 </div>
             </div>
@@ -373,7 +373,7 @@ function TaskDetail() {
         {task?.resultJson?.details && (
             <div className="md:col-span-12">
                <div className="bg-surface-container-high/50 rounded-xl border border-outline-variant/15 overflow-hidden p-8">
-                  <p className="text-xs uppercase tracking-[0.3em] font-bold text-primary mb-6">Granular Data Details</p>
+                  <p className="text-xs uppercase tracking-[0.3em] font-bold text-primary mb-6">粒度数据详情</p>
                   <p className="text-on-surface-variant font-mono text-sm leading-relaxed">
                      {task.resultJson.details}
                   </p>

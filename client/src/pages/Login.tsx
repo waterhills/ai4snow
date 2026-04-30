@@ -39,8 +39,8 @@ export default function Login() {
           <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-primary to-transparent opacity-50"></div>
 
           <div className="text-center mb-10">
-            <h1 className="font-headline text-3xl font-bold tracking-tight text-on-surface uppercase mb-2 text-glow">Authorization</h1>
-            <p className="text-on-surface-variant font-label text-sm uppercase tracking-widest">Identify to Glacial Lab</p>
+            <h1 className="font-headline text-3xl font-bold tracking-tight text-on-surface uppercase mb-2 text-glow">身份验证</h1>
+            <p className="text-on-surface-variant font-label text-sm uppercase tracking-widest">登录冰川实验室</p>
           </div>
 
           {error && (
@@ -53,7 +53,7 @@ export default function Login() {
           <form onSubmit={handleSubmit} className="space-y-8">
             <div className="group/input relative">
               <label className="block text-[10px] font-label text-on-surface-variant uppercase tracking-widest mb-2" htmlFor="login-email">
-                Ident-String (Email)
+                标识字符串 (Email)
               </label>
               <input
                 id="login-email"
@@ -69,7 +69,7 @@ export default function Login() {
 
             <div className="group/input relative">
               <label className="block text-[10px] font-label text-on-surface-variant uppercase tracking-widest mb-2" htmlFor="login-password">
-                Pass-Key
+                通行密钥
               </label>
               <input
                 id="login-password"
@@ -90,14 +90,14 @@ export default function Login() {
               {loading ? (
                 <div className="w-5 h-5 border-2 border-on-primary-fixed border-t-transparent rounded-full animate-spin"></div>
               ) : (
-                <span className="uppercase tracking-widest text-sm">Authenticate</span>
+                <span className="uppercase tracking-widest text-sm">验证</span>
               )}
             </button>
           </form>
 
           <div className="mt-8 text-center">
             <p className="text-xs text-on-surface-variant uppercase tracking-widest">
-              No clearance? <Link to="/register" className="text-primary hover:text-primary-container transition-colors ml-2 underline underline-offset-4 decoration-primary/30">Deploy Here</Link>
+              没有权限？ <Link to="/register" className="text-primary hover:text-primary-container transition-colors ml-2 underline underline-offset-4 decoration-primary/30">在此部署</Link>
             </p>
           </div>
         </div>

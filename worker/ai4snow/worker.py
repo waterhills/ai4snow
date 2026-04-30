@@ -16,6 +16,10 @@ import time
 from pathlib import Path
 
 import requests
+from dotenv import load_dotenv
+
+# 加载 .env 配置
+load_dotenv()
 
 # ============================================================
 # 配置区：优先读取环境变量，否则使用默认值
@@ -49,7 +53,7 @@ def fetch_pending_task() -> dict | None:
 
 def download_file(file_key: str, save_path: Path) -> bool:
     url = f"{API_BASE_URL}/uploads/inputs/{file_key}"
-    print(f"  📥 正在下载视频: {url}")
+    print(f"  [Download] Downloading video: {url}")
     try:
         resp = requests.get(url, stream=True, timeout=60)
         if resp.status_code != 200: return False
@@ -74,7 +78,7 @@ def run_pipeline(input_video: Path, run_name: str, output_root: Path) -> dict:
         "--pipeline-id", PIPELINE_ID,
     ]
 
-    print(f"  🧠 启动分析 (YOLO + RTMPose)...")
+    print(f"  [Analysis] Starting analysis (YOLO + RTMPose)...")
     log_content = ""
     try:
         process = subprocess.Popen(
@@ -102,7 +106,7 @@ def recode_to_h264(input_path: Path) -> Path:
     ffmpeg_exe = imageio_ffmpeg.get_ffmpeg_exe()
     output_path = input_path.with_name(f"{input_path.stem}_h264{input_path.suffix}")
     
-    print(f"  🎬 正在使用 FFmpeg 转换为 H.264 格式以兼容浏览器播放...")
+    print(f"  [Video] Using FFmpeg to convert to H.264...")
     cmd = [
         ffmpeg_exe, "-y",
         "-i", str(input_path),
@@ -122,7 +126,7 @@ def recode_to_h264(input_path: Path) -> Path:
 
 def upload_result_file(file_path: Path, new_name: str) -> str | None:
     url = f"{API_BASE_URL}/api/internal/callback/upload-result"
-    print(f"  📤 正在通过网络推送结果视频: {file_path.name}")
+    print(f"  [Upload] Uploading result video: {file_path.name}")
     try:
         with open(file_path, "rb") as f:
             files = {"file": (new_name, f, "video/mp4")}
@@ -156,7 +160,7 @@ def report_failure(task_id: str, error_msg: str):
 def process_task(task: dict):
     task_id = task["id"]
     file_key = task["inputFileKey"]
-    print(f"\n{'='*50}\n🔥监听到新任务: {task_id[:8]}\n{'='*50}")
+    print(f"\n{'='*50}\n[Task] New task detected: {task_id[:8]}\n{'='*50}")
     
     WORK_DIR.mkdir(parents=True, exist_ok=True)
     task_work_dir = WORK_DIR / task_id[:8]
@@ -210,7 +214,7 @@ def process_task(task: dict):
                 return
 
             report_success(task_id, result_key1, result_key2, result_data)
-            print(f"✅ 任务完成！已成功上报双路视频数据")
+            print(f"Done! Task completed and reported successfully.")
         else:
             print(f"❌ 任务失败原因: {res.get('error')}")
             report_failure(task_id, f"分析流水线出错: {res.get('error')}")
@@ -218,10 +222,10 @@ def process_task(task: dict):
         report_failure(task_id, "下载视频失败")
 
 def main():
-    print("🚀 SkiVision Worker 已启动")
-    print(f"🔗 连接地址: {API_BASE_URL}")
-    print(f"🔧 流水线: {PIPELINE_ID} | 轮询间隔: {POLL_INTERVAL}s")
-    print("🎧 正在等待任务...")
+    print("SkiVision Worker Started")
+    print(f"Connection URL: {API_BASE_URL}")
+    print(f"Pipeline: {PIPELINE_ID} | Poll Interval: {POLL_INTERVAL}s")
+    print("Listening for tasks...")
     
     while True:
         task = fetch_pending_task()

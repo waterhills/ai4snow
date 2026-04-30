@@ -46,18 +46,18 @@ export default function Upload() {
     
     // Check points
     if (user && user.credits < 1) {
-      setError('Insufficient credits. Please top up your tokens in the dashboard.');
+      setError('额度不足。请在个人控制面板中充值代币。');
       return;
     }
 
     // Typical video/image files
     if (!selectedFile.type.startsWith('video/') && !selectedFile.type.startsWith('image/')) {
-      setError('Invalid format. Please upload video or image telemetry.');
+      setError('格式无效。请上传视频或图像遥测数据。');
       return;
     }
     
     if (selectedFile.size > 100 * 1024 * 1024) {
-      setError('Payload too large. Maximum size is 100MB.');
+      setError('文件过大。最大限制为 100MB。');
       return;
     }
 
@@ -73,7 +73,7 @@ export default function Upload() {
       const res = await taskApi.upload(file, (percent) => setProgress(percent));
       navigate(`/results/${res.data.task.id}`);
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Ingestion failed, verify network uplink.');
+      setError(err.response?.data?.error || '摄取失败，请检查网络上行链路。');
       setUploading(false);
       setProgress(0);
     }
@@ -85,10 +85,10 @@ export default function Upload() {
       <div className="lg:col-span-8 space-y-12">
         <header className="space-y-4">
           <h1 className="font-headline text-5xl font-bold tracking-tight text-on-surface">
-            DATA <span className="text-primary">INGESTION</span>
+            数据 <span className="text-primary">上传</span>
           </h1>
           <p className="text-on-surface-variant max-w-xl text-lg leading-relaxed">
-            Synchronize your high-performance sensor telemetry with our glacial intelligence engine for real-time kinematic analysis.
+            上传您的滑雪视频，由我们的视觉分析引擎进行精准的姿态识别与动作评分。
           </p>
         </header>
 
@@ -133,11 +133,11 @@ export default function Upload() {
                     <span className="material-symbols-outlined text-4xl text-primary">upload_file</span>
                 </div>
                 <div className="space-y-2">
-                    <h3 className="text-2xl font-headline font-semibold">Drop Telemetry Here</h3>
-                    <p className="text-on-surface-variant font-mono text-sm">or browse local secure terminal for encoded limits</p>
+                    <h3 className="text-2xl font-headline font-semibold">在此处拖放视频</h3>
+                    <p className="text-on-surface-variant font-mono text-sm">或浏览本地安全终端进行编码限制</p>
                 </div>
                 <button className="bg-gradient-to-r from-primary to-primary-container text-on-primary-fixed px-8 py-3 rounded-xl font-bold tracking-tight hover:shadow-[0_0_20px_rgba(114,220,255,0.5)] transition-all pointer-events-auto">
-                    SELECT SOURCE
+                    选择数据源
                 </button>
                 </div>
             ) : (
@@ -158,7 +158,7 @@ export default function Upload() {
                     {uploading ? (
                         <div className="w-full text-left mt-6">
                             <div className="flex justify-between items-center mb-2">
-                                <span className="text-primary text-xs uppercase tracking-widest font-bold">Uplink Active</span>
+                                <span className="text-primary text-xs uppercase tracking-widest font-bold">文件上传中</span>
                                 <span className="text-on-surface font-mono text-sm">{progress}%</span>
                             </div>
                             <div className="h-2 w-full bg-surface-lowest rounded-full overflow-hidden border border-outline-variant/30">
@@ -175,13 +175,13 @@ export default function Upload() {
                                 className="flex-1 bg-gradient-to-r from-primary to-primary-container text-on-primary-fixed py-3 rounded-xl font-bold active:scale-95 transition-transform flex items-center justify-center gap-2 btn-glow"
                             >
                                 <span className="material-symbols-outlined text-lg">rocket_launch</span>
-                                INITIATE UPLINK
+                                开始分析
                             </button>
                             <button 
                                 onClick={() => setFile(null)}
                                 className="px-6 bg-surface-variant border border-outline-variant/50 text-on-surface py-3 rounded-xl font-bold hover:bg-surface-container-high transition-colors active:scale-95"
                             >
-                                ABORT
+                                中止
                             </button>
                         </div>
                     )}
@@ -191,7 +191,7 @@ export default function Upload() {
         </section>
 
         <div className="flex flex-wrap gap-4 items-center justify-center lg:justify-start">
-          <span className="text-xs font-bold tracking-widest text-on-surface-variant uppercase">Protocols:</span>
+          <span className="text-xs font-bold tracking-widest text-on-surface-variant uppercase">协议:</span>
           <div className="flex gap-2">
             <span className="px-3 py-1 bg-surface-container text-primary text-xs font-mono rounded-lg border border-outline-variant/30">MP4_STREAM</span>
             <span className="px-3 py-1 bg-surface-container text-primary text-xs font-mono rounded-lg border border-outline-variant/30">MOV_PACKET</span>
@@ -204,37 +204,37 @@ export default function Upload() {
       <aside className="lg:col-span-4 space-y-8">
         <div className="glass-panel border border-outline-variant/20 rounded-xl p-8 sticky top-28 space-y-8">
             <h3 className="font-headline text-xl font-bold uppercase tracking-tight flex items-center justify-between">
-                System Guidelines
-                <span className="text-[10px] bg-primary/20 text-primary px-2 py-1 rounded">SYS_LOG</span>
+                系统指南
+                <span className="text-[10px] bg-primary/20 text-primary px-2 py-1 rounded">系统日志</span>
             </h3>
 
             <div className="space-y-4">
                 <div className="flex items-start gap-3">
                     <span className="material-symbols-outlined text-primary mt-1 text-xl">monetization_on</span>
                     <div>
-                        <h4 className="font-bold text-sm text-on-surface uppercase tracking-wide">Token Drain</h4>
-                        <p className="text-xs text-on-surface-variant leading-relaxed">Each upload triggers the neural analysis engine and deducts 1 Token upon successful queue.</p>
+                        <h4 className="font-bold text-sm text-on-surface uppercase tracking-wide">代币消耗</h4>
+                        <p className="text-xs text-on-surface-variant leading-relaxed">每次上传都会触发神经分析引擎，并在成功进入队列后扣除 1 个代币。</p>
                     </div>
                 </div>
                 <div className="flex items-start gap-3">
                     <span className="material-symbols-outlined text-tertiary mt-1 text-xl">video_camera_front</span>
                     <div>
-                        <h4 className="font-bold text-sm text-on-surface uppercase tracking-wide">Video Optimal</h4>
-                        <p className="text-xs text-on-surface-variant leading-relaxed">Limit sequences to 100MB lengths. Avoid heavily compressed variants for better tracking points.</p>
+                        <h4 className="font-bold text-sm text-on-surface uppercase tracking-wide">视频优化</h4>
+                        <p className="text-xs text-on-surface-variant leading-relaxed">限制视频长度在 100MB 以内。避免使用高压缩比格式以获得更好的追踪效果。</p>
                     </div>
                 </div>
                 <div className="flex items-start gap-3">
                     <span className="material-symbols-outlined text-secondary mt-1 text-xl">speed</span>
                     <div>
-                        <h4 className="font-bold text-sm text-on-surface uppercase tracking-wide">Async Polling</h4>
-                        <p className="text-xs text-on-surface-variant leading-relaxed">You will be redirected to the telemetry history console during analysis pipeline execution.</p>
+                        <h4 className="font-bold text-sm text-on-surface uppercase tracking-wide">异步轮询</h4>
+                        <p className="text-xs text-on-surface-variant leading-relaxed">在分析管道执行期间，您将被重定向到遥测历史控制台。</p>
                     </div>
                 </div>
             </div>
 
             <div className="p-4 bg-tertiary-container/20 rounded-xl border border-tertiary/20">
                 <p className="text-xs text-on-tertiary-container/80 leading-relaxed italic">
-                    "Precision is the difference between a podium and a fall. Calibrate carefully."
+                    "精准是领奖台与摔倒之间的区别。请仔细校准。"
                 </p>
             </div>
         </div>

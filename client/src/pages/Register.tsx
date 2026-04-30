@@ -40,8 +40,8 @@ export default function Register() {
           <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-primary to-transparent opacity-50"></div>
 
           <div className="text-center mb-10">
-            <h1 className="font-headline text-3xl font-bold tracking-tight text-on-surface uppercase mb-2 text-glow">System Deployment</h1>
-            <p className="text-on-surface-variant font-label text-xs uppercase tracking-widest">Initialization includes 3 free scans</p>
+            <h1 className="font-headline text-3xl font-bold tracking-tight text-on-surface uppercase mb-2 text-glow">系统部署</h1>
+            <p className="text-on-surface-variant font-label text-xs uppercase tracking-widest">初始化包含 3 次免费扫描</p>
           </div>
 
           {error && (
@@ -54,13 +54,13 @@ export default function Register() {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="group/input relative">
               <label className="block text-[10px] font-label text-on-surface-variant uppercase tracking-widest mb-2" htmlFor="register-name">
-                Operative Designation (Optional)
+                操作员代号 (可选)
               </label>
               <input
                 id="register-name"
                 type="text"
                 className="w-full bg-transparent border-0 border-b border-outline-variant/30 text-on-surface px-2 py-2 focus:ring-0 focus:border-primary transition-colors text-sm font-mono placeholder:text-outline-variant"
-                placeholder="Enter Name or Alias"
+                placeholder="输入姓名或别名"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 autoFocus
@@ -69,7 +69,7 @@ export default function Register() {
 
             <div className="group/input relative">
               <label className="block text-[10px] font-label text-on-surface-variant uppercase tracking-widest mb-2" htmlFor="register-email">
-                Secure Comm Channel (Email)
+                安全通信频道 (Email)
               </label>
               <input
                 id="register-email"
@@ -84,13 +84,13 @@ export default function Register() {
 
             <div className="group/input relative">
               <label className="block text-[10px] font-label text-on-surface-variant uppercase tracking-widest mb-2" htmlFor="register-password">
-                Encryption Key (Password)
+                加密密钥 (密码)
               </label>
               <input
                 id="register-password"
                 type="password"
                 className="w-full bg-transparent border-0 border-b border-outline-variant/30 text-on-surface px-2 py-2 focus:ring-0 focus:border-primary transition-colors text-sm font-mono placeholder:text-outline-variant"
-                placeholder="Minimum 6 chars"
+                placeholder="最少 6 个字符"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -106,14 +106,14 @@ export default function Register() {
               {loading ? (
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
               ) : (
-                <span className="uppercase tracking-widest text-sm">Deploy & Execute</span>
+                <span className="uppercase tracking-widest text-sm">部署并执行</span>
               )}
             </button>
           </form>
 
           <div className="mt-8 text-center">
             <p className="text-xs text-on-surface-variant uppercase tracking-widest">
-              Existing clearance? <Link to="/login" className="text-tertiary hover:text-[#bda1ff] transition-colors ml-2 underline underline-offset-4 decoration-tertiary/30">Auth Here</Link>
+              已有权限？ <Link to="/login" className="text-tertiary hover:text-[#bda1ff] transition-colors ml-2 underline underline-offset-4 decoration-tertiary/30">在此验证</Link>
             </p>
           </div>
         </div>

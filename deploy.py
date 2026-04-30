@@ -1,4 +1,4 @@
-"""上传更新的 admin dist + server dist 并重启"""
+"""上传更新的 client dist + admin dist + server dist 并重启"""
 import os
 import time
 import paramiko
@@ -22,9 +22,31 @@ def main():
     ssh.connect(hostname=HOST, port=SSH_PORT, username=USER, password=PASS, timeout=15)
     print("Connected")
 
+    # 初始化 SCP
+    scp = SCPClient(ssh.get_transport())
+
+    # 上传 client/dist
+    print("\n=== Upload client/dist ===")
+    client_dist = os.path.join(LOCAL_DIR, "client", "dist")
+    
+    # 先清空远程 client/dist
+    stdin, stdout, stderr = ssh.exec_command(f"rm -rf {REMOTE_DIR}/client/dist/*", timeout=10)
+    stdout.read()
+
+    for root, dirs, files in os.walk(client_dist):
+        dirs[:] = [d for d in dirs if not d.startswith(".")]
+        for f in files:
+            full_local = os.path.join(root, f)
+            rel = os.path.relpath(full_local, client_dist)
+            full_remote = f"{REMOTE_DIR}/client/dist/{rel.replace(os.sep, '/')}"
+            remote_parent = os.path.dirname(full_remote)
+            stdin, stdout, stderr = ssh.exec_command(f"mkdir -p '{remote_parent}'", timeout=5)
+            stdout.read()
+            print(f"  {rel}")
+            scp.put(full_local, full_remote)
+
     # 上传 admin/dist
     print("\n=== Upload admin/dist ===")
-    scp = SCPClient(ssh.get_transport())
     admin_dist = os.path.join(LOCAL_DIR, "admin", "dist")
 
     # 先清空远程 admin/dist

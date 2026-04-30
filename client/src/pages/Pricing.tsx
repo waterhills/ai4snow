@@ -27,12 +27,12 @@ export default function Pricing() {
             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
               <span className="material-symbols-outlined text-8xl" style={{ fontSize: '96px' }}>database</span>
             </div>
-            <h2 className="font-headline text-on-surface-variant text-sm tracking-widest uppercase mb-4">Current Capacity</h2>
+            <h2 className="font-headline text-on-surface-variant text-sm tracking-widest uppercase mb-4">当前容量</h2>
             <div className="flex items-baseline gap-2 mb-2">
               <span className="text-6xl font-headline font-bold text-primary tracking-tighter">
                 {user?.credits ?? 0}
               </span>
-              <span className="text-on-surface-variant font-label text-sm uppercase tracking-widest">/ Tokens</span>
+              <span className="text-on-surface-variant font-label text-sm uppercase tracking-widest">/ 代币 (Tokens)</span>
             </div>
             <div className="w-full bg-surface-variant h-1 rounded-full mb-8">
               <div
@@ -44,7 +44,7 @@ export default function Pricing() {
               onClick={() => { document.getElementById('pricing-tiers')?.scrollIntoView({ behavior: 'smooth' }); }}
               className="w-full py-4 bg-gradient-to-br from-primary to-primary-container text-on-primary-fixed font-bold rounded-xl active:scale-95 transition-transform btn-glow uppercase tracking-wider text-sm"
             >
-              Top Up Credits
+              充值额度
             </button>
           </div>
 
@@ -55,7 +55,7 @@ export default function Pricing() {
               </div>
               <div>
                 <p className="text-on-surface font-semibold truncate max-w-[200px]">{user?.email}</p>
-                <p className="text-xs text-on-surface-variant uppercase tracking-wider">{user?.role === 'ADMIN' ? 'SYSADMIN' : 'Operative'}</p>
+                <p className="text-xs text-on-surface-variant uppercase tracking-wider">{user?.role === 'ADMIN' ? '系统管理员' : '操作员'}</p>
               </div>
             </div>
           </div>
@@ -68,44 +68,44 @@ export default function Pricing() {
           {!isLoggedIn && (
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-surface-container-highest border border-primary/20 mb-8">
                 <span className="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
-                <span className="text-xs font-label uppercase tracking-widest text-primary">Login to access dashboard</span>
+                <span className="text-xs font-label uppercase tracking-widest text-primary">登录以访问控制面板</span>
             </div>
           )}
-          <h2 className="font-headline text-5xl md:text-6xl font-bold tracking-tighter mb-4 text-glow text-on-surface">Scale Your Intelligence</h2>
-          <p className="text-on-surface-variant text-lg">Advanced algorithmic tiers for every level of exploration. Precision engineering delivered as a service.</p>
+          <h2 className="font-headline text-5xl md:text-6xl font-bold tracking-tighter mb-4 text-glow text-on-surface">扩展您的智能</h2>
+          <p className="text-on-surface-variant text-lg">为不同层级的探索提供先进的算法阶梯。精准工程，按需服务。</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
           {/* Trial / Free */}
           <div className="glass-panel p-10 rounded-2xl border border-outline-variant/20 flex flex-col hover:border-primary/30 transition-all">
             <div className="mb-10">
-              <h3 className="text-xl font-headline font-bold text-on-surface mb-2">Novice</h3>
+              <h3 className="text-xl font-headline font-bold text-on-surface mb-2">新手</h3>
               <div className="flex items-baseline gap-1">
-                <span className="text-4xl font-headline font-bold text-on-surface">$0</span>
-                <span className="text-on-surface-variant text-sm">/ Lifetime</span>
+                <span className="text-4xl font-headline font-bold text-on-surface">¥0</span>
+                <span className="text-on-surface-variant text-sm">/ 终身</span>
               </div>
             </div>
             <ul className="space-y-4 mb-12 flex-grow">
               <li className="flex items-center gap-3 text-on-surface-variant text-sm">
                 <span className="material-symbols-outlined text-primary text-lg">check_circle</span>
-                3 Analysis tokens
+                3 次分析代币
               </li>
               <li className="flex items-center gap-3 text-on-surface-variant text-sm">
                 <span className="material-symbols-outlined text-primary text-lg">check_circle</span>
-                Basic Telemetry Graphs
+                基础遥测图表
               </li>
               <li className="flex items-center gap-3 text-on-surface-variant text-sm">
                 <span className="material-symbols-outlined text-primary text-lg">check_circle</span>
-                Standard Support
+                标准技术支持
               </li>
             </ul>
             {isLoggedIn ? (
               <button className="w-full py-4 text-center glass-panel border border-outline-variant text-on-surface font-bold rounded-xl hover:bg-surface-variant transition-colors opacity-50 cursor-not-allowed">
-                Current Plan
+                当前方案
               </button>
             ) : (
               <Link to="/register" className="w-full text-center py-4 glass-panel border border-outline-variant text-on-surface font-bold rounded-xl hover:bg-surface-variant transition-colors">
-                Initialize Account
+                初始化账号
               </Link>
             )}
           </div>
@@ -113,59 +113,59 @@ export default function Pricing() {
           {/* Pro */}
           <div className="bg-surface-container-high p-10 rounded-2xl border-2 border-primary relative flex flex-col transform md:-translate-y-4 shadow-[0_0_40px_rgba(114,220,255,0.1)]">
             <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-primary text-on-primary-fixed px-4 py-1 rounded-full text-xs font-bold tracking-widest uppercase">
-                Most Advanced
+                最先进的
             </div>
             <div className="mb-10">
-              <h3 className="text-xl font-headline font-bold text-primary mb-2">Pro</h3>
+              <h3 className="text-xl font-headline font-bold text-primary mb-2">专业</h3>
               <div className="flex items-baseline gap-1">
                 <span className="text-4xl font-headline font-bold text-on-surface">¥49</span>
-                <span className="text-on-surface-variant text-sm">/ Month</span>
+                <span className="text-on-surface-variant text-sm">/ 月</span>
               </div>
             </div>
             <ul className="space-y-4 mb-12 flex-grow">
               <li className="flex items-center gap-3 text-on-surface text-sm font-medium">
                 <span className="material-symbols-outlined text-primary text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
-                500 Analysis tokens / Month
+                每月 500 次分析代币
               </li>
               <li className="flex items-center gap-3 text-on-surface text-sm font-medium">
                 <span className="material-symbols-outlined text-primary text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
-                Predictive Maps
+                预测性映射图
               </li>
               <li className="flex items-center gap-3 text-on-surface text-sm font-medium">
                 <span className="material-symbols-outlined text-primary text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
-                Priority Queue Access
+                优先处理队列
               </li>
             </ul>
             <button className="w-full py-4 bg-gradient-to-br from-primary to-primary-container text-on-primary-fixed font-bold rounded-xl active:scale-95 transition-transform btn-glow shadow-lg shadow-primary/20">
-              Buy Now
+              立即购买
             </button>
           </div>
 
           {/* Elite / Coach */}
           <div className="glass-panel p-10 rounded-2xl border border-outline-variant/20 flex flex-col hover:border-primary/30 transition-all">
             <div className="mb-10">
-              <h3 className="text-xl font-headline font-bold text-on-surface mb-2">Elite</h3>
+              <h3 className="text-xl font-headline font-bold text-on-surface mb-2">精英</h3>
               <div className="flex items-baseline gap-1">
                 <span className="text-4xl font-headline font-bold text-on-surface">¥449</span>
-                <span className="text-on-surface-variant text-sm">/ Year</span>
+                <span className="text-on-surface-variant text-sm">/ 年</span>
               </div>
             </div>
             <ul className="space-y-4 mb-12 flex-grow">
               <li className="flex items-center gap-3 text-on-surface-variant text-sm">
                 <span className="material-symbols-outlined text-primary text-lg">check_circle</span>
-                Unlimited Tokens
+                无限次数代币
               </li>
               <li className="flex items-center gap-3 text-on-surface-variant text-sm">
                 <span className="material-symbols-outlined text-primary text-lg">check_circle</span>
-                Full Lab API Access
+                完整实验室 API 访问
               </li>
               <li className="flex items-center gap-3 text-on-surface-variant text-sm">
                 <span className="material-symbols-outlined text-primary text-lg">check_circle</span>
-                Neural Custom Models
+                神经网络定制模型
               </li>
             </ul>
             <button className="w-full py-4 bg-surface-bright border border-primary/40 text-primary font-bold rounded-xl hover:bg-primary/10 transition-all active:scale-95">
-              Contact Command
+              联系指挥部
             </button>
           </div>
         </div>
@@ -181,16 +181,16 @@ export default function Pricing() {
         <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent"></div>
         <div className="absolute inset-0 flex items-center px-12">
             <div className="max-w-xl">
-                <span className="text-primary font-label text-xs uppercase tracking-[0.4em] mb-4 block">System Integrity</span>
-                <h2 className="font-headline text-4xl font-bold text-on-surface leading-tight mb-6">Processing glacial telemetry with 0.004ms latency.</h2>
+                <span className="text-primary font-label text-xs uppercase tracking-[0.4em] mb-4 block">系统完整性</span>
+                <h2 className="font-headline text-4xl font-bold text-on-surface leading-tight mb-6">以 0.004ms 延迟处理冰川遥测数据。</h2>
                 <div className="flex gap-12">
                     <div>
                         <span className="block text-2xl font-headline font-bold text-primary">12.4 TB</span>
-                        <span className="text-xs text-on-surface-variant uppercase tracking-widest">Data Processed</span>
+                        <span className="text-xs text-on-surface-variant uppercase tracking-widest">已处理数据</span>
                     </div>
                     <div>
                         <span className="block text-2xl font-headline font-bold text-tertiary">99.9%</span>
-                        <span className="text-xs text-on-surface-variant uppercase tracking-widest">Uptime Metric</span>
+                        <span className="text-xs text-on-surface-variant uppercase tracking-widest">在线时间指标</span>
                     </div>
                 </div>
             </div>
