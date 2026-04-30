@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom';
+import { useAuthStore } from '../stores/auth';
 
 export default function Home() {
+  const { isLoggedIn } = useAuthStore();
   return (
     <main>
       {/* ===== Hero Section ===== */}
@@ -31,9 +33,15 @@ export default function Home() {
             </p>
             
             <div className="flex flex-wrap gap-6">
-              <Link to="/register" className="bg-gradient-to-br from-primary to-primary-container text-on-primary-fixed font-bold px-10 py-5 rounded-xl text-lg uppercase tracking-wider neon-glow active:scale-95 transition-all">
-                部署系统
-              </Link>
+              {isLoggedIn ? (
+                <Link to="/upload" className="bg-gradient-to-br from-primary to-primary-container text-on-primary-fixed font-bold px-10 py-5 rounded-xl text-lg uppercase tracking-wider neon-glow active:scale-95 transition-all">
+                  开始
+                </Link>
+              ) : (
+                <Link to="/register" className="bg-gradient-to-br from-primary to-primary-container text-on-primary-fixed font-bold px-10 py-5 rounded-xl text-lg uppercase tracking-wider neon-glow active:scale-95 transition-all">
+                  注册账号
+                </Link>
+              )}
               <a href="#features" className="glass-card border border-outline-variant/30 text-on-surface px-10 py-5 rounded-xl text-lg uppercase tracking-wider hover:bg-surface-variant transition-colors active:scale-95">
                 查看技术规格
               </a>

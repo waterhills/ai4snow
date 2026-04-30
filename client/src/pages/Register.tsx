@@ -1,4 +1,4 @@
-import { useState, FormEvent } from 'react';
+import { useState, useEffect, FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { authApi } from '../services/api';
 import { useAuthStore } from '../stores/auth';
@@ -7,18 +7,52 @@ export default function Register() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [code, setCode] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [codeSending, setCodeSending] = useState(false);
+  const [codeMsg, setCodeMsg] = useState('');
+  // 倒计时秒数，>0 时按钮禁用
+  const [countdown, setCountdown] = useState(0);
   const { login } = useAuthStore();
   const navigate = useNavigate();
 
+  // 倒计时计时器
+  useEffect(() => {
+    if (countdown <= 0) return;
+    const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [countdown]);
+
+  // 发送验证码
+  const handleSendCode = async () => {
+    if (!email) {
+      setError('请先输入邮箱地址');
+      return;
+    }
+    setError('');
+    setCodeMsg('');
+    setCodeSending(true);
+
+    try {
+      const res = await authApi.sendCode({ email });
+      setCodeMsg(res.data.message || '验证码已发送');
+      setCountdown(60);
+    } catch (err: any) {
+      setError(err.response?.data?.error || '发送验证码失败');
+    } finally {
+      setCodeSending(false);
+    }
+  };
+
+  // 提交注册
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
     try {
-      const res = await authApi.register({ email, password, name: name || undefined });
+      const res = await authApi.register({ email, password, name: name || undefined, code });
       login(res.data.token, res.data.user);
       navigate('/pricing');
     } catch (err: any) {
@@ -51,6 +85,13 @@ export default function Register() {
             </div>
           )}
 
+          {codeMsg && (
+            <div className="mb-6 p-4 rounded-lg bg-primary/10 border border-primary/30 flex items-center gap-3">
+              <span className="material-symbols-outlined text-primary text-xl">check_circle</span>
+              <p className="text-xs text-primary font-medium">{codeMsg}</p>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="group/input relative">
               <label className="block text-[10px] font-label text-on-surface-variant uppercase tracking-widest mb-2" htmlFor="register-name">
@@ -75,7 +116,7 @@ export default function Register() {
                 id="register-email"
                 type="email"
                 className="w-full bg-transparent border-0 border-b border-outline-variant/30 text-on-surface px-2 py-2 focus:ring-0 focus:border-primary transition-colors text-sm font-mono placeholder:text-outline-variant"
-                placeholder="operative@domain.com"
+                placeholder="your@email.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -96,6 +137,40 @@ export default function Register() {
                 required
                 minLength={6}
               />
+            </div>
+
+            {/* 验证码输入区 */}
+            <div className="group/input relative">
+              <label className="block text-[10px] font-label text-on-surface-variant uppercase tracking-widest mb-2" htmlFor="register-code">
+                邮箱验证码
+              </label>
+              <div className="flex gap-3">
+                <input
+                  id="register-code"
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={6}
+                  className="flex-1 bg-transparent border-0 border-b border-outline-variant/30 text-on-surface px-2 py-2 focus:ring-0 focus:border-primary transition-colors text-sm font-mono placeholder:text-outline-variant tracking-[0.5em]"
+                  placeholder="6 位验证码"
+                  value={code}
+                  onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={handleSendCode}
+                  disabled={codeSending || countdown > 0}
+                  className="flex-shrink-0 px-4 py-2 rounded-lg border border-primary/40 text-primary text-xs font-bold uppercase tracking-wider hover:bg-primary/10 transition-all disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+                >
+                  {codeSending ? (
+                    <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                  ) : countdown > 0 ? (
+                    `${countdown}s`
+                  ) : (
+                    '发送验证码'
+                  )}
+                </button>
+              </div>
             </div>
 
             <button

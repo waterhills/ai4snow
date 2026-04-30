@@ -29,7 +29,9 @@ api.interceptors.response.use(
 
 // ===== 认证 =====
 export const authApi = {
-  register: (data: { email: string; password: string; name?: string }) =>
+  sendCode: (data: { email: string }) =>
+    api.post('/v1/auth/send-code', data),
+  register: (data: { email: string; password: string; name?: string; code: string }) =>
     api.post('/v1/auth/register', data),
   login: (data: { email: string; password: string }) =>
     api.post('/v1/auth/login', data),

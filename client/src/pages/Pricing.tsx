@@ -77,9 +77,9 @@ export default function Pricing() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
           {/* Trial / Free */}
-          <div className="glass-panel p-10 rounded-2xl border border-outline-variant/20 flex flex-col hover:border-primary/30 transition-all">
+          <div className="glass-panel p-10 rounded-2xl border border-outline-variant/20 flex flex-col hover:border-primary/30 transition-all opacity-80">
             <div className="mb-10">
-              <h3 className="text-xl font-headline font-bold text-on-surface mb-2">新手</h3>
+              <h3 className="text-xl font-headline font-bold text-on-surface mb-2">基础试用</h3>
               <div className="flex items-baseline gap-1">
                 <span className="text-4xl font-headline font-bold text-on-surface">¥0</span>
                 <span className="text-on-surface-variant text-sm">/ 终身</span>
@@ -88,48 +88,72 @@ export default function Pricing() {
             <ul className="space-y-4 mb-12 flex-grow">
               <li className="flex items-center gap-3 text-on-surface-variant text-sm">
                 <span className="material-symbols-outlined text-primary text-lg">check_circle</span>
-                3 次分析代币
+                赠送 3 次初始分析额度
               </li>
               <li className="flex items-center gap-3 text-on-surface-variant text-sm">
                 <span className="material-symbols-outlined text-primary text-lg">check_circle</span>
-                基础遥测图表
+                基础姿态估计图表
               </li>
               <li className="flex items-center gap-3 text-on-surface-variant text-sm">
                 <span className="material-symbols-outlined text-primary text-lg">check_circle</span>
-                标准技术支持
+                标准处理优先级
               </li>
             </ul>
             {isLoggedIn ? (
               <button className="w-full py-4 text-center glass-panel border border-outline-variant text-on-surface font-bold rounded-xl hover:bg-surface-variant transition-colors opacity-50 cursor-not-allowed">
-                当前方案
+                已激活
               </button>
             ) : (
               <Link to="/register" className="w-full text-center py-4 glass-panel border border-outline-variant text-on-surface font-bold rounded-xl hover:bg-surface-variant transition-colors">
-                初始化账号
+                立即初始化
               </Link>
             )}
           </div>
 
-          {/* Pro */}
+          {/* Single Purchase */}
+          <div className="glass-panel p-10 rounded-2xl border border-outline-variant/20 flex flex-col hover:border-primary/30 transition-all">
+            <div className="mb-10">
+              <h3 className="text-xl font-headline font-bold text-on-surface mb-2">次数购买</h3>
+              <div className="flex items-baseline gap-1">
+                <span className="text-4xl font-headline font-bold text-on-surface">¥9.9</span>
+                <span className="text-on-surface-variant text-sm">/ 次</span>
+              </div>
+            </div>
+            <ul className="space-y-4 mb-12 flex-grow">
+              <li className="flex items-center gap-3 text-on-surface-variant text-sm">
+                <span className="material-symbols-outlined text-primary text-lg">check_circle</span>
+                单次深度视觉分析
+              </li>
+              <li className="flex items-center gap-3 text-on-surface-variant text-sm">
+                <span className="material-symbols-outlined text-primary text-lg">check_circle</span>
+                即买即用，永久有效
+              </li>
+              <li className="flex items-center gap-3 text-on-surface-variant text-sm">
+                <span className="material-symbols-outlined text-primary text-lg">check_circle</span>
+                完整滑行压力评估
+              </li>
+            </ul>
+            <button className="w-full py-4 bg-surface-bright border border-primary/40 text-primary font-bold rounded-xl hover:bg-primary/10 transition-all active:scale-95">
+              立即充值
+            </button>
+          </div>
+
+          {/* Subscription */}
           <div className="bg-surface-container-high p-10 rounded-2xl border-2 border-primary relative flex flex-col transform md:-translate-y-4 shadow-[0_0_40px_rgba(114,220,255,0.1)]">
             <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-primary text-on-primary-fixed px-4 py-1 rounded-full text-xs font-bold tracking-widest uppercase">
-                最先进的
+                最受欢迎
             </div>
             <div className="mb-10">
-              <h3 className="text-xl font-headline font-bold text-primary mb-2">专业</h3>
+              <h3 className="text-xl font-headline font-bold text-primary mb-2">订阅制</h3>
               <div className="flex items-baseline gap-1">
-                <span className="text-4xl font-headline font-bold text-on-surface">¥49</span>
+                <span className="text-4xl font-headline font-bold text-on-surface">¥49.9</span>
                 <span className="text-on-surface-variant text-sm">/ 月</span>
               </div>
             </div>
             <ul className="space-y-4 mb-12 flex-grow">
               <li className="flex items-center gap-3 text-on-surface text-sm font-medium">
                 <span className="material-symbols-outlined text-primary text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
-                每月 500 次分析代币
-              </li>
-              <li className="flex items-center gap-3 text-on-surface text-sm font-medium">
-                <span className="material-symbols-outlined text-primary text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
-                预测性映射图
+                每天 3 次分析额度
               </li>
               <li className="flex items-center gap-3 text-on-surface text-sm font-medium">
                 <span className="material-symbols-outlined text-primary text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
@@ -137,35 +161,7 @@ export default function Pricing() {
               </li>
             </ul>
             <button className="w-full py-4 bg-gradient-to-br from-primary to-primary-container text-on-primary-fixed font-bold rounded-xl active:scale-95 transition-transform btn-glow shadow-lg shadow-primary/20">
-              立即购买
-            </button>
-          </div>
-
-          {/* Elite / Coach */}
-          <div className="glass-panel p-10 rounded-2xl border border-outline-variant/20 flex flex-col hover:border-primary/30 transition-all">
-            <div className="mb-10">
-              <h3 className="text-xl font-headline font-bold text-on-surface mb-2">精英</h3>
-              <div className="flex items-baseline gap-1">
-                <span className="text-4xl font-headline font-bold text-on-surface">¥449</span>
-                <span className="text-on-surface-variant text-sm">/ 年</span>
-              </div>
-            </div>
-            <ul className="space-y-4 mb-12 flex-grow">
-              <li className="flex items-center gap-3 text-on-surface-variant text-sm">
-                <span className="material-symbols-outlined text-primary text-lg">check_circle</span>
-                无限次数代币
-              </li>
-              <li className="flex items-center gap-3 text-on-surface-variant text-sm">
-                <span className="material-symbols-outlined text-primary text-lg">check_circle</span>
-                完整实验室 API 访问
-              </li>
-              <li className="flex items-center gap-3 text-on-surface-variant text-sm">
-                <span className="material-symbols-outlined text-primary text-lg">check_circle</span>
-                神经网络定制模型
-              </li>
-            </ul>
-            <button className="w-full py-4 bg-surface-bright border border-primary/40 text-primary font-bold rounded-xl hover:bg-primary/10 transition-all active:scale-95">
-              联系指挥部
+              立即订阅
             </button>
           </div>
         </div>

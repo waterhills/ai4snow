@@ -1,0 +1,125 @@
+# 邮箱验证码注册功能实现
+
+## 目标
+
+将现有的"输入邮箱+密码直接注册"流程改为"邮箱验证码验证后注册"，确保用户提供真实邮箱地址。
+
+## 核心流程
+
+```mermaid
+sequenceDiagram
+    participant U as 用户（前端）
+    participant S as Express 后端
+    participant M as QQ SMTP 邮件服务
+
+    U->>S: POST /auth/send-code {email}
+    S->>S: 生成 6 位验证码，存入内存缓存（5 分钟过期）
+    S->>M: 通过 nodemailer 发送验证码邮件
+    M->>U: 邮件到达用户邮箱
+    U->>S: POST /auth/register {email, password, name, code}
+    S->>S: 验证 code 是否匹配且未过期
+    S->>S: 创建用户（emailVerified=true）
+    S->>U: 返回 JWT + 用户信息
+```
+
+## User Review Required
+
+> [!IMPORTANT]
+> 验证码将从 `947441390@qq.com` 发送。此邮箱会在"发件人"栏显示给所有注册用户。
+
+> [!WARNING]
+> 验证码存储在服务器内存中（Map），服务器重启后失效。对于当前阶段足够使用，后期可迁移到 Redis。
+
+## Proposed Changes
+
+### 后端改动
+
+---
+
+#### [MODIFY] [.env](file:///g:/myproject/skating/skate_web/server/.env)
+添加邮件相关的环境变量：
+```env
+# 邮件服务 (QQ 邮箱 SMTP)
+MAIL_HOST=smtp.qq.com
+MAIL_PORT=465
+MAIL_USER=947441390@qq.com
+MAIL_PASS=devomdwsuudzbfhj
+```
+
+---
+
+#### [MODIFY] [config/index.ts](file:///g:/myproject/skating/skate_web/server/src/config/index.ts)
+新增邮件配置字段，从环境变量读取 SMTP 参数。
+
+---
+
+#### [NEW] [services/mail.ts](file:///g:/myproject/skating/skate_web/server/src/services/mail.ts)
+新建邮件发送服务模块：
+- 创建 `nodemailer` transporter（QQ 邮箱 SMTP）
+- 导出 `sendVerificationCode(email, code)` 函数
+- 邮件模板使用带品牌色的 HTML 格式
+
+---
+
+#### [MODIFY] [routes/auth.ts](file:///g:/myproject/skating/skate_web/server/src/routes/auth.ts)
+1. 新增 `POST /send-code` 接口：
+   - 接收 `{email}`，生成 6 位随机数字验证码
+   - 存入内存 Map（键=email，值={code, expireAt}），有效期 5 分钟
+   - 同一邮箱 60 秒内禁止重复发送（防刷）
+   - 调用 `sendVerificationCode()` 发送邮件
+2. 修改 `POST /register` 接口：
+   - 新增 `code` 字段校验
+   - 验证码匹配后删除缓存、创建用户
+3. 登录逻辑不变（邮箱+密码登录）
+
+---
+
+### 前端改动
+
+---
+
+#### [MODIFY] [services/api.ts](file:///g:/myproject/skating/skate_web/client/src/services/api.ts)
+在 `authApi` 中新增 `sendCode` 方法：
+```typescript
+sendCode: (data: { email: string }) => api.post('/v1/auth/send-code', data),
+```
+
+---
+
+#### [MODIFY] [pages/Register.tsx](file:///g:/myproject/skating/skate_web/client/src/pages/Register.tsx)
+1. 新增验证码输入框（6 位数字）
+2. 新增"发送验证码"按钮（带 60 秒倒计时禁用效果）
+3. 提交注册时携带 `code` 字段
+4. 保持现有的视觉设计风格不变
+
+---
+
+### 数据库改动
+
+> [!NOTE]
+> 本方案**不需要修改数据库模型**。验证码存储在服务器内存中，用户表无需新增字段。注册成功即代表邮箱已验证。
+
+---
+
+### 依赖安装
+
+在 `server` 目录执行：
+```bash
+npm install nodemailer
+npm install --save-dev @types/nodemailer
+```
+
+## Verification Plan
+
+### Automated Tests
+1. 启动后端服务 `npm run dev:server`
+2. 启动前端 `npm run dev:client`
+3. 在浏览器访问 `http://localhost:5173/register`
+4. 输入邮箱 → 点击"发送验证码" → 检查邮箱收到验证码
+5. 输入验证码 + 密码 → 点击注册 → 验证跳转和登录状态
+6. 测试验证码过期、重复发送等边界情况
+
+### Manual Verification
+- 检查 QQ 邮箱是否正确收到格式美观的验证码邮件
+- 确认 60 秒倒计时 UI 正常工作
+- 验证错误提示（验证码错误、过期、邮箱已注册等）

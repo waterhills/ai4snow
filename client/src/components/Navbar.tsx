@@ -49,8 +49,11 @@ export default function Navbar() {
               </button>
             </div>
           ) : (
-             <div className="flex gap-4 items-center font-headline">
+             <div className="flex gap-6 items-center font-headline">
                <Link to="/login" className="text-[#dbe6ff]/70 hover:text-[#72dcff] transition-colors text-sm font-medium uppercase tracking-wider">登录</Link>
+               <Link to="/register" className="px-5 py-2 bg-[#72dcff]/10 border border-[#72dcff]/20 text-[#72dcff] text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#72dcff]/20 transition-all active:scale-95 shadow-[0_0_15px_rgba(114,220,255,0.1)]">
+                 注册
+               </Link>
              </div>
           )}
 
