@@ -6,8 +6,10 @@
 from __future__ import annotations
 
 import argparse
+import json
 import math
 import os
+import time
 from pathlib import Path
 from typing import Iterable
 
@@ -141,6 +143,7 @@ def parse_args():
     parser.add_argument('--force-redo-track', action='store_true')
     parser.add_argument('--force-redo-pose', action='store_true')
     parser.add_argument('--max-frames', type=int, default=0)
+    parser.add_argument('--profile-json', type=str, default='')
     return parser.parse_args()
 
 
@@ -679,18 +682,22 @@ def enhance_backlit_image(image: np.ndarray, strong: bool = False):
     return np.clip(sharpened, 0, 255).astype(np.uint8)
 
 
-def run_detector_predict(detector, image: np.ndarray, imgsz: int, conf: float):
+def run_detector_predict(detector, image: np.ndarray, imgsz: int, conf: float, profile=None):
+    inference_started_at = time.perf_counter() if profile is not None else None
     try:
         results = detector.predict(image, imgsz=imgsz, conf=conf, verbose=False, classes=[0])
     except Exception:
         results = detector(image, imgsz=imgsz, conf=conf, verbose=False, classes=[0])
+    if profile is not None:
+        profile['tracking']['rescue_yolo_calls'] += 1
+        profile['tracking']['rescue_yolo_inference_s'] += float(time.perf_counter() - inference_started_at)
     boxes = results[0].boxes if results else None
     boxes_xyxy = boxes.xyxy.detach().cpu().numpy().astype(np.float32) if boxes is not None and boxes.xyxy is not None else np.zeros((0, 4), dtype=np.float32)
     scores = boxes.conf.detach().cpu().numpy().astype(np.float32) if boxes is not None and boxes.conf is not None else np.zeros((0,), dtype=np.float32)
     return boxes_xyxy, scores
 
 
-def detect_rescue_candidates(detector, frame, search_anchor_box, predicted_box, fallback_box, imgsz, conf, lost_lock_frames):
+def detect_rescue_candidates(detector, frame, search_anchor_box, predicted_box, fallback_box, imgsz, conf, lost_lock_frames, profile=None):
     ref_box = search_anchor_box if search_anchor_box is not None else (predicted_box if predicted_box is not None else fallback_box)
     if ref_box is None:
         return np.zeros((0, 4), dtype=np.float32), np.zeros((0,), dtype=np.float32), 0.0
@@ -721,7 +728,7 @@ def detect_rescue_candidates(detector, frame, search_anchor_box, predicted_box, 
     enhanced_roi = enhance_backlit_image(roi, strong=bool(backlight_score >= STRONG_BACKLIGHT_SCORE or lost_lock_frames >= 2))
     rescue_conf = max(conf * BACKLIGHT_RESCUE_CONF_SCALE, 0.08)
     rescue_imgsz = max(960, min(int(imgsz), 1280))
-    rescue_boxes, rescue_scores = run_detector_predict(detector, enhanced_roi, imgsz=rescue_imgsz, conf=rescue_conf)
+    rescue_boxes, rescue_scores = run_detector_predict(detector, enhanced_roi, imgsz=rescue_imgsz, conf=rescue_conf, profile=profile)
     if len(rescue_boxes) == 0:
         return np.zeros((0, 4), dtype=np.float32), np.zeros((0,), dtype=np.float32), backlight_score
 
@@ -1037,7 +1044,9 @@ def track_target_bboxes(
     conf: float,
     max_frames: int,
     force: bool,
+    profile=None,
 ):
+    tracking_started_at = time.perf_counter() if profile is not None else None
     if cache_path.exists() and not force:
         cache = load_tensor_dict(cache_path)
         if isinstance(cache, dict) and 'boxes_xyxy' in cache:
@@ -1045,9 +1054,18 @@ def track_target_bboxes(
             boxes_xyxy = np.asarray(cache['boxes_xyxy'], dtype=np.float32)
             found_mask = np.asarray(cache.get('found_mask', np.ones((len(boxes_xyxy),), dtype=np.bool_)), dtype=bool)
             crowd_mask = np.asarray(cache.get('crowd_mask', np.zeros((len(boxes_xyxy),), dtype=np.bool_)), dtype=bool)
+            if profile is not None:
+                profile['tracking']['frames_processed'] = int(len(boxes_xyxy))
+                profile['tracking']['found_frames'] = int(found_mask.sum())
+                profile['tracking']['lost_frames'] = int(len(found_mask) - found_mask.sum())
+                profile['tracking']['crowded_frames'] = int(crowd_mask.sum())
+                profile['tracking']['total_s'] = float(time.perf_counter() - tracking_started_at)
             return boxes_xyxy, found_mask, crowd_mask
 
+    detector_load_started_at = time.perf_counter() if profile is not None else None
     detector = load_detector(detector_model_path)
+    if profile is not None:
+        profile['tracking']['detector_load_s'] = float(time.perf_counter() - detector_load_started_at)
     cap = cv2.VideoCapture(str(input_path))
     if not cap.isOpened():
         raise RuntimeError(f'无法打开视频：{input_path}')
@@ -1112,6 +1130,7 @@ def track_target_bboxes(
 
             # 优化：每3帧才运行一次YOLO检测，中间帧复用缓存
             if frame_idx % yolo_interval == 0:
+                primary_yolo_started_at = time.perf_counter() if profile is not None else None
                 results = detector.track(
                     frame,
                     imgsz=imgsz,
@@ -1121,6 +1140,9 @@ def track_target_bboxes(
                     classes=[0],
                     tracker=str(tracker_config_path),
                 )
+                if profile is not None:
+                    profile['tracking']['primary_yolo_calls'] += 1
+                    profile['tracking']['primary_yolo_inference_s'] += float(time.perf_counter() - primary_yolo_started_at)
                 boxes = results[0].boxes
                 cached_boxes_xyxy = boxes.xyxy.detach().cpu().numpy().astype(np.float32) if boxes is not None and boxes.xyxy is not None else np.zeros((0, 4), dtype=np.float32)
                 cached_scores = boxes.conf.detach().cpu().numpy().astype(np.float32) if boxes is not None and boxes.conf is not None else np.zeros((0,), dtype=np.float32)
@@ -1140,6 +1162,8 @@ def track_target_bboxes(
                 or lost_lock_frames > 0
             )
             if should_try_rescue:
+                if profile is not None:
+                    profile['tracking']['rescue_attempts'] += 1
                 rescue_boxes, rescue_scores, search_backlight_score = detect_rescue_candidates(
                     detector,
                     frame,
@@ -1149,6 +1173,7 @@ def track_target_bboxes(
                     imgsz,
                     conf,
                     lost_lock_frames,
+                    profile=profile,
                 )
             if len(rescue_boxes) > 0:
                 if track_ids is None:
@@ -1585,6 +1610,12 @@ def track_target_bboxes(
         'found_mask': torch.from_numpy(found_mask.astype(np.bool_)),
         'crowd_mask': torch.from_numpy(crowd_mask.astype(np.bool_)),
     })
+    if profile is not None:
+        profile['tracking']['frames_processed'] = int(len(tracked_boxes))
+        profile['tracking']['found_frames'] = int(found_mask.sum())
+        profile['tracking']['lost_frames'] = int(len(found_mask) - found_mask.sum())
+        profile['tracking']['crowded_frames'] = int(crowd_mask.sum())
+        profile['tracking']['total_s'] = float(time.perf_counter() - tracking_started_at)
     return tracked_boxes, found_mask, crowd_mask
 
 
@@ -1626,9 +1657,13 @@ def maybe_upscale_crop(crop: np.ndarray, sr_model, threshold: float):
 
     return processed, total_scale
 
-def infer_pose_from_processed_crop(processed_crop: np.ndarray, origin, scale_factor: float, pose_model, ref_kp=None):
+def infer_pose_from_processed_crop(processed_crop: np.ndarray, origin, scale_factor: float, pose_model, ref_kp=None, profile=None):
     bboxes = [[0, 0, processed_crop.shape[1], processed_crop.shape[0]]]
+    inference_started_at = time.perf_counter() if profile is not None else None
     keypoints, scores = pose_model(processed_crop, bboxes=bboxes)
+    if profile is not None:
+        profile['pose']['rtmpose_calls'] += 1
+        profile['pose']['rtmpose_inference_s'] += float(time.perf_counter() - inference_started_at)
     if len(keypoints) == 0:
         return None, -1e9, 0.0, 0
 
@@ -1701,14 +1736,18 @@ def build_pose_crop_variants(crop: np.ndarray, sr_model, small_box_threshold: fl
     return variants, backlight_score
 
 
-def pose_from_crop(frame: np.ndarray, box_xyxy: np.ndarray, pose_model, sr_model, small_box_threshold: float, ref_kp=None):
+def pose_from_crop(frame: np.ndarray, box_xyxy: np.ndarray, pose_model, sr_model, small_box_threshold: float, ref_kp=None, profile=None):
     crop, origin = crop_from_box(frame, box_xyxy)
     if crop.size == 0:
         return None
 
     variants, backlight_score = build_pose_crop_variants(crop, sr_model, small_box_threshold)
     base_processed, base_scale, _, _ = variants[0]
-    best_kp, base_score, base_mean_conf, base_visible_count = infer_pose_from_processed_crop(base_processed, origin, base_scale, pose_model, ref_kp=ref_kp)
+    if profile is not None:
+        profile['pose']['pose_base_variant_calls'] += 1
+    best_kp, base_score, base_mean_conf, base_visible_count = infer_pose_from_processed_crop(
+        base_processed, origin, base_scale, pose_model, ref_kp=ref_kp, profile=profile
+    )
     best_total = base_score
 
     if len(variants) == 1:
@@ -1728,7 +1767,11 @@ def pose_from_crop(frame: np.ndarray, box_xyxy: np.ndarray, pose_model, sr_model
         return best_kp
 
     for processed_crop, scale_factor, variant_backlight, strong_variant in variants[1:]:
-        kp, score, mean_conf, visible_count = infer_pose_from_processed_crop(processed_crop, origin, scale_factor, pose_model, ref_kp=ref_kp)
+        if profile is not None:
+            profile['pose']['pose_rescue_variant_calls'] += 1
+        kp, score, mean_conf, visible_count = infer_pose_from_processed_crop(
+            processed_crop, origin, scale_factor, pose_model, ref_kp=ref_kp, profile=profile
+        )
         if kp is None:
             continue
         variant_bonus = 0.0
@@ -1748,7 +1791,11 @@ def pose_from_crop(frame: np.ndarray, box_xyxy: np.ndarray, pose_model, sr_model
     if best_kp is None and backlight_score >= BACKLIGHT_TRIGGER_SCORE:
         enhanced_crop = enhance_backlit_image(crop, strong=True)
         processed_crop, scale_factor = maybe_upscale_crop(enhanced_crop, sr_model, small_box_threshold)
-        best_kp, _, _, _ = infer_pose_from_processed_crop(processed_crop, origin, scale_factor, pose_model, ref_kp=ref_kp)
+        if profile is not None:
+            profile['pose']['pose_rescue_variant_calls'] += 1
+        best_kp, _, _, _ = infer_pose_from_processed_crop(
+            processed_crop, origin, scale_factor, pose_model, ref_kp=ref_kp, profile=profile
+        )
     return best_kp
 
 
@@ -1956,16 +2003,26 @@ def generate_keypoints(
     small_box_threshold: float,
     max_frames: int,
     force: bool,
+    profile=None,
 ):
+    pose_started_at = time.perf_counter() if profile is not None else None
     if keypoint_cache_path.exists() and not force:
         cache = load_tensor_dict(keypoint_cache_path)
         if isinstance(cache, dict) and 'raw_keypoints' in cache:
             print(f'[Info] Reuse raw keypoint cache: {keypoint_cache_path}')
-            return np.asarray(cache['raw_keypoints'], dtype=np.float32)
+            cached_keypoints = np.asarray(cache['raw_keypoints'], dtype=np.float32)
+            if profile is not None:
+                profile['pose']['pose_frames_processed'] = int(len(cached_keypoints))
+                profile['pose']['rtmpose_calls_per_frame'] = 0.0
+                profile['pose']['total_s'] = float(time.perf_counter() - pose_started_at)
+            return cached_keypoints
         if isinstance(cache, dict) and 'keypoints' in cache:
             print(f'[Info] Existing cache lacks raw keypoints, regenerate pose: {keypoint_cache_path}')
 
+    pose_model_load_started_at = time.perf_counter() if profile is not None else None
     pose_model = load_pose_model(pose_model_ref)
+    if profile is not None:
+        profile['pose']['pose_model_load_s'] = float(time.perf_counter() - pose_model_load_started_at)
     cap = cv2.VideoCapture(str(input_path))
     if not cap.isOpened():
         raise RuntimeError(f'无法打开视频：{input_path}')
@@ -1989,6 +2046,8 @@ def generate_keypoints(
             if not ok:
                 results = results[:frame_idx]
                 break
+            if profile is not None:
+                profile['pose']['pose_frames_processed'] += 1
 
             # 性能优化：降分辨率（长边压缩至1080px）
             h, w = frame.shape[:2]
@@ -1999,6 +2058,8 @@ def generate_keypoints(
 
             base_box = clamp_box_xyxy(track_boxes[frame_idx], frame.shape[:2])
             crowded = bool(crowd_mask is not None and frame_idx < len(crowd_mask) and crowd_mask[frame_idx])
+            if profile is not None and crowded:
+                profile['pose']['crowded_pose_frames'] += 1
             seed_kp = None if seed_arr is None else seed_arr[frame_idx].astype(np.float32)
             seed_box = estimate_seed_box(seed_kp)
             candidates = build_pose_candidates(base_box, seed_box, prev_box, frame.shape[:2], crowded=crowded)
@@ -2008,7 +2069,17 @@ def generate_keypoints(
             best_score = -1e9
             base_size = box_size(base_box)
             for candidate_idx, candidate_box in enumerate(candidates):
-                kp2d = pose_from_crop(frame, candidate_box, pose_model, sr_model, small_box_threshold, ref_kp=prev_kp)
+                if profile is not None:
+                    profile['pose']['pose_candidate_boxes'] += 1
+                kp2d = pose_from_crop(
+                    frame,
+                    candidate_box,
+                    pose_model,
+                    sr_model,
+                    small_box_threshold,
+                    ref_kp=prev_kp,
+                    profile=profile,
+                )
                 if kp2d is None:
                     continue
                 degenerate = is_degenerate_pose(kp2d, candidate_box)
@@ -2029,8 +2100,12 @@ def generate_keypoints(
                 seed_ok = seed_kp is None or joint_match_score(kp2d[:, :2], cur_conf, seed_kp) >= 0.68
                 if candidate_idx == 0 and base_size >= max(110.0, small_box_threshold * 0.92):
                     if score >= 0.67 and mean_conf >= 0.63 and temporal_ok and seed_ok:
+                        if profile is not None:
+                            profile['pose']['early_break_frames'] += 1
                         break
                 elif candidate_idx == 1 and best_score >= 0.72 and mean_conf >= 0.60 and temporal_ok:
+                    if profile is not None:
+                        profile['pose']['early_break_frames'] += 1
                     break
 
             fallback_box_for_pose = best_box if best_box is not None else base_box
@@ -2038,6 +2113,8 @@ def generate_keypoints(
             mapped_seed_kp = remap_keypoints_to_box(seed_kp, fallback_box_for_pose, conf_scale=0.92 if base_size < 90.0 else 0.88)
 
             if best_kp is None:
+                if profile is not None:
+                    profile['pose']['fallback_pose_frames'] += 1
                 if mapped_seed_kp is not None:
                     best_kp = mapped_seed_kp
                 elif mapped_prev_kp is not None:
@@ -2069,6 +2146,11 @@ def generate_keypoints(
 
     cap.release()
     save_tensor_dict(keypoint_cache_path, {'raw_keypoints': torch.from_numpy(results.astype(np.float32))})
+    if profile is not None:
+        pose_frames_processed = int(profile['pose']['pose_frames_processed'])
+        rtmpose_calls = int(profile['pose']['rtmpose_calls'])
+        profile['pose']['rtmpose_calls_per_frame'] = float(rtmpose_calls / pose_frames_processed) if pose_frames_processed > 0 else 0.0
+        profile['pose']['total_s'] = float(time.perf_counter() - pose_started_at)
     return results
 
 
@@ -2760,6 +2842,53 @@ def render_from_keypoints(
 
 def main():
     args = parse_args()
+    profile_path = resolve_project_path(args.profile_json) if args.profile_json else None
+    profile = None
+    if profile_path is not None:
+        profile = {
+            'schema_version': 1,
+            'tracker': {
+                'total_s': 0.0,
+            },
+            'tracking': {
+                'total_s': 0.0,
+                'frames_processed': 0,
+                'detector_load_s': 0.0,
+                'primary_yolo_calls': 0,
+                'primary_yolo_inference_s': 0.0,
+                'rescue_attempts': 0,
+                'rescue_yolo_calls': 0,
+                'rescue_yolo_inference_s': 0.0,
+                'found_frames': 0,
+                'lost_frames': 0,
+                'crowded_frames': 0,
+            },
+            'pose': {
+                'total_s': 0.0,
+                'pose_frames_processed': 0,
+                'pose_model_load_s': 0.0,
+                'pose_candidate_boxes': 0,
+                'pose_base_variant_calls': 0,
+                'pose_rescue_variant_calls': 0,
+                'rtmpose_calls': 0,
+                'rtmpose_inference_s': 0.0,
+                'rtmpose_calls_per_frame': 0.0,
+                'crowded_pose_frames': 0,
+                'early_break_frames': 0,
+                'fallback_pose_frames': 0,
+            },
+            'postprocess': {
+                'total_s': 0.0,
+                'offline_temporal_refine_s': 0.0,
+                'reduce_temporal_lag_s': 0.0,
+                'repair_brief_outliers_s': 0.0,
+                'track_box_consistency_s': 0.0,
+            },
+            'render': {
+                'total_s': 0.0,
+            },
+        }
+    tracker_started_at = time.perf_counter() if profile is not None else None
     input_path = resolve_project_path(args.input)
     output_path = resolve_project_path(args.output)
     compare_output_path = resolve_project_path(args.compare_output)
@@ -2801,6 +2930,7 @@ def main():
         conf=args.conf,
         max_frames=args.max_frames,
         force=args.force_redo_track,
+        profile=profile,
     )
 
     raw_keypoints_arr = generate_keypoints(
@@ -2814,6 +2944,7 @@ def main():
         small_box_threshold=args.small_box_threshold,
         max_frames=args.max_frames,
         force=args.force_redo_pose,
+        profile=profile,
     )
 
     if args.max_frames and args.max_frames > 0:
@@ -2822,10 +2953,27 @@ def main():
         found_mask = found_mask[: int(args.max_frames)]
         crowd_mask = crowd_mask[: int(args.max_frames)]
 
+    postprocess_started_at = time.perf_counter() if profile is not None else None
+    stage_started_at = time.perf_counter() if profile is not None else None
     keypoints_arr = offline_temporal_refine(raw_keypoints_arr.astype(np.float32), track_boxes[: len(raw_keypoints_arr)])
+    if profile is not None:
+        profile['postprocess']['offline_temporal_refine_s'] = float(time.perf_counter() - stage_started_at)
+
+    stage_started_at = time.perf_counter() if profile is not None else None
     keypoints_arr = reduce_temporal_lag(keypoints_arr.astype(np.float32), raw_keypoints_arr.astype(np.float32), track_boxes[: len(raw_keypoints_arr)])
+    if profile is not None:
+        profile['postprocess']['reduce_temporal_lag_s'] = float(time.perf_counter() - stage_started_at)
+
+    stage_started_at = time.perf_counter() if profile is not None else None
     keypoints_arr = repair_brief_outliers(keypoints_arr.astype(np.float32), raw_keypoints_arr.astype(np.float32), track_boxes[: len(raw_keypoints_arr)])
+    if profile is not None:
+        profile['postprocess']['repair_brief_outliers_s'] = float(time.perf_counter() - stage_started_at)
+
+    stage_started_at = time.perf_counter() if profile is not None else None
     keypoints_arr = enforce_track_box_consistency(keypoints_arr.astype(np.float32), track_boxes[: len(raw_keypoints_arr)])
+    if profile is not None:
+        profile['postprocess']['track_box_consistency_s'] = float(time.perf_counter() - stage_started_at)
+        profile['postprocess']['total_s'] = float(time.perf_counter() - postprocess_started_at)
     save_tensor_dict(keypoint_cache_path, {
         'raw_keypoints': torch.from_numpy(raw_keypoints_arr.astype(np.float32)),
         'keypoints': torch.from_numpy(keypoints_arr.astype(np.float32)),
@@ -2834,6 +2982,7 @@ def main():
         'crowd_mask': torch.from_numpy(crowd_mask[: len(raw_keypoints_arr)].astype(np.bool_)),
     })
 
+    render_started_at = time.perf_counter() if profile is not None else None
     render_from_keypoints(
         input_path,
         output_path,
@@ -2845,6 +2994,13 @@ def main():
         slow_compare_path=slow_compare_output_path,
         slow_factor=args.slow_factor,
     )
+    if profile is not None:
+        profile['render']['total_s'] = float(time.perf_counter() - render_started_at)
+        profile['tracker']['total_s'] = float(time.perf_counter() - tracker_started_at)
+        profile_path.parent.mkdir(parents=True, exist_ok=True)
+        with profile_path.open('w', encoding='utf-8') as profile_file:
+            json.dump(profile, profile_file, ensure_ascii=False, indent=2)
+            profile_file.write('\n')
 
     print('[Success] 高精度骨骼叠加视频已生成，请验收输出文件。')
     print(f'[Overlay] {output_path.resolve()}')

@@ -2,9 +2,11 @@
 from __future__ import annotations
 
 import argparse
+import json
 import re
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 from evaluators.base import EvaluatorContext
@@ -45,11 +47,13 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument('--pipeline-id', type=str, choices=PIPELINE_IDS, default='jsba', help='Evaluator route preset.')
     parser.add_argument('--analysis-style', type=str, choices=('default', 'infinity'), default='default', help='Pressure analysis style preset.')
     parser.add_argument('--max-frames', type=int, default=0, help='Optional frame cap for quick smoke tests.')
+    parser.add_argument('--profile', action='store_true', help='Write structured performance profiling JSON for this run.')
     return parser
 
 
 def main() -> int:
     args = build_parser().parse_args()
+    pipeline_started_at = time.perf_counter() if args.profile else None
 
     input_path = Path(args.video).expanduser().resolve()
     if not input_path.exists():
@@ -73,6 +77,8 @@ def main() -> int:
     pressure_csv_path = review_dir / 'pressure_curve_timeseries.csv'
     pressure_metrics_path = review_dir / 'pressure_curve_metrics.json'
     pressure_sync_video_path = run_dir / f'{run_name}_pressure_sync.mp4'
+    performance_profile_path = run_dir / 'performance_profile.json'
+    tracker_profile_path = run_dir / 'tracker_profile.json'
     track_cache_path = Path(args.track_cache).expanduser() if args.track_cache else run_dir / f'{run_name}_bytetrack_boxes.pt'
     keypoint_cache_path = Path(args.keypoint_cache).expanduser() if args.keypoint_cache else run_dir / f'{run_name}_rtmpose_keypoints.pt'
 
@@ -109,6 +115,9 @@ def main() -> int:
     if args.force:
         tracker_cmd.extend(['--force-redo-track', '--force-redo-pose'])
 
+    if args.profile:
+        tracker_cmd.extend(['--profile-json', str(tracker_profile_path)])
+
     print('[Run Name]', run_name)
     print('[Input]', input_path)
     print('[Run Dir]', run_dir)
@@ -116,7 +125,15 @@ def main() -> int:
     print('[Mode] ByteTrack + RTMPose-X + evaluator-router')
     print('[Tracker Command]', ' '.join(tracker_cmd))
 
+    tracker_started_at = time.perf_counter() if args.profile else None
     subprocess.run(tracker_cmd, check=True, cwd=str(PROJ_ROOT))
+    tracker_subprocess_s = time.perf_counter() - tracker_started_at if args.profile else 0.0
+
+    tracker_profile = {}
+    if args.profile:
+        with tracker_profile_path.open('r', encoding='utf-8') as profile_file:
+            tracker_profile = json.load(profile_file)
+        tracker_profile_path.unlink()
 
     review_dir.mkdir(parents=True, exist_ok=True)
     fps, frame_count = probe_video_metadata(input_path)
@@ -138,8 +155,42 @@ def main() -> int:
         pressure_metrics_path=pressure_metrics_path,
         pressure_sync_video_path=pressure_sync_video_path,
     )
+    evaluation_started_at = time.perf_counter() if args.profile else None
     evaluator_result = run_evaluator(evaluation_context)
+    evaluation_s = time.perf_counter() - evaluation_started_at if args.profile else 0.0
     print('[Evaluator]', evaluator_result.get('evaluator', 'unknown'))
+
+    if args.profile:
+        frames_processed = int(tracker_profile.get('pose', {}).get('pose_frames_processed', 0))
+        performance_profile = {
+            'schema_version': 1,
+            'run': {
+                'run_name': str(run_name),
+                'pipeline_id': str(args.pipeline_id),
+                'input_path': str(input_path),
+                'max_frames': int(args.max_frames),
+                'frames_processed': frames_processed,
+            },
+            'video': {
+                'fps': float(fps),
+                'frame_count': int(frame_count),
+                'duration_s': float(frame_count / fps) if fps > 0.0 else 0.0,
+            },
+            'pipeline': {
+                'total_s': float(time.perf_counter() - pipeline_started_at),
+                'tracker_subprocess_s': float(tracker_subprocess_s),
+                'evaluation_s': float(evaluation_s),
+            },
+            'tracker': tracker_profile.get('tracker', {}),
+            'tracking': tracker_profile.get('tracking', {}),
+            'pose': tracker_profile.get('pose', {}),
+            'postprocess': tracker_profile.get('postprocess', {}),
+            'render': tracker_profile.get('render', {}),
+        }
+        with performance_profile_path.open('w', encoding='utf-8') as profile_file:
+            json.dump(performance_profile, profile_file, ensure_ascii=False, indent=2)
+            profile_file.write('\n')
+        print(f'[Profile] {performance_profile_path}')
 
     print('[Done] 输出文件如下:')
     print(f'  Overlay: {overlay_path}')
