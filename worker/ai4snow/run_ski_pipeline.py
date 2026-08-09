@@ -97,6 +97,11 @@ def main() -> int:
             '--slow-compare-output', str(slow_compare_path),
             '--slow-factor', str(args.slow_factor),
         ])
+    else:
+        tracker_cmd.extend([
+            '--slow-output', '',
+            '--slow-compare-output', '',
+        ])
 
     if args.max_frames and args.max_frames > 0:
         tracker_cmd.extend(['--max-frames', str(int(args.max_frames))])
