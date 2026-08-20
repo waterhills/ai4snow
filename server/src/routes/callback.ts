@@ -4,6 +4,7 @@ import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { prisma } from '../lib/db';
 import { config } from '../config';
+import { recordWorkerHeartbeat } from '../services/monitor';
 
 const router = Router();
 
@@ -19,6 +20,15 @@ function verifyInternalKey(req: any, res: any, next: any): void {
   }
   next();
 }
+
+// Worker 状态监控（放在鉴权前，以便监控非法连接尝试）
+router.use((req, _res, next) => {
+  if (req.path === '/callback/pending-tasks') {
+    const workerIp = req.ip || req.socket.remoteAddress || 'unknown';
+    recordWorkerHeartbeat(workerIp, req.headers['user-agent'] as string);
+  }
+  next();
+});
 
 router.use(verifyInternalKey);
 

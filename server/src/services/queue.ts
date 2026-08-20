@@ -75,7 +75,7 @@ export async function publishTask(message: TaskMessage): Promise<boolean> {
  */
 export async function getQueueLength(): Promise<number> {
   const client = getRedis();
-  if (!client) return 0;
+  if (!client) return -1; // 修改：未连接时返回 -1
   try {
     return await client.llen(QUEUE_KEY);
   } catch {
