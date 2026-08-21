@@ -1,0 +1,1 @@
+"""Professional ski-evaluation package."""

@@ -22,18 +22,18 @@ def load_data(data_path: str):
 
 def route_to_evaluator(mode: str, action: str, data):
     """
-    将读取到的数据分发给 external_evaluators 下对应的类。
+    将读取到的数据分发给 evaluation.beginner 下对应的类。
     """
     print(f"[Dispatcher] Routing to external evaluator -> Mode: {mode}, Action: {action}")
     
     # 在这里后续开发者可以轻松导入自己加的后处理算子，例如：
     if mode == 'beginner' and action in ['heel_slip', 'toe_slip']:
-        from external_evaluators.beginner_mode.slip_evaluator import SlipEvaluator
+        from evaluation.beginner.slip_evaluator import SlipEvaluator
         evaluator = SlipEvaluator(mode, action)
         return evaluator.evaluate(data)
         
     elif mode == 'beginner' and action in ['falling_leaf_heel', 'falling_leaf_toe']:
-        from external_evaluators.beginner_mode.falling_leaf_evaluator import FallingLeafEvaluator
+        from evaluation.beginner.falling_leaf_evaluator import FallingLeafEvaluator
         evaluator = FallingLeafEvaluator(mode, action)
         return evaluator.evaluate(data)
     

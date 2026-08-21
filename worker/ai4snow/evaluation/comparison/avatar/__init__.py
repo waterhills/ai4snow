@@ -1,0 +1,1 @@
+"""Comparison-avatar visualization package."""

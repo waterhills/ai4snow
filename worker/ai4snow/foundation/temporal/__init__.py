@@ -1,0 +1,1 @@
+"""Temporal-processing foundation package."""

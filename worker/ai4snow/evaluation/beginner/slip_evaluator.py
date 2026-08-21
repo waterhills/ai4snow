@@ -1,7 +1,7 @@
 import math
 import statistics
 from typing import Dict, List, Any
-from ..base_evaluator import BaseExternalEvaluator
+from .base_evaluator import BaseExternalEvaluator
 
 # COCO-17 Mapping for reference
 COCO_MAPPING = {

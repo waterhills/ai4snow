@@ -1,7 +1,7 @@
 import math
 import statistics
 from typing import Dict, List, Any
-from ..base_evaluator import BaseExternalEvaluator
+from .base_evaluator import BaseExternalEvaluator
 
 COCO_MAPPING = {
     0: 'nose',
