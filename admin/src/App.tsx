@@ -6,11 +6,13 @@ import {
   UserOutlined,
   FileSearchOutlined,
   LogoutOutlined,
+  CloudServerOutlined,
 } from '@ant-design/icons';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Users from './pages/Users';
 import Tasks from './pages/Tasks';
+import SystemStatus from './pages/SystemStatus';
 
 const { Sider, Content, Header } = Layout;
 const { Text } = Typography;
@@ -61,6 +63,11 @@ function AdminLayout() {
       key: 'tasks',
       icon: <FileSearchOutlined />,
       label: '任务管理',
+    },
+    {
+      key: 'system',
+      icon: <CloudServerOutlined />,
+      label: '系统状态',
     },
   ];
 
@@ -132,6 +139,7 @@ function AdminLayout() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/users" element={<Users />} />
             <Route path="/tasks" element={<Tasks />} />
+            <Route path="/system" element={<SystemStatus />} />
           </Routes>
         </Content>
       </Layout>

@@ -43,29 +43,55 @@ router.post('/', authMiddleware, upload.single('file'), async (req: AuthRequest,
       return;
     }
 
-    // 检查积分是否充足
+    // 获取用户信息，用于扣费判断
     const user = await prisma.user.findUnique({ where: { id: req.userId } });
-    if (!user || user.credits < 1) {
-      res.status(403).json({ error: '积分不足，请联系管理员充值' });
+    if (!user) {
+      res.status(404).json({ error: '用户不存在' });
       return;
     }
 
-    // 事务：创建任务 + 扣减积分
+    // 事务：创建任务 + 智能扣费（VIP 优先 → 基础积分兜底）
     const task = await prisma.$transaction(async (tx) => {
-      const newTask = await tx.task.create({
+      const now = new Date();
+      const isVip = user.vipExpireAt && user.vipExpireAt > now;
+
+      // VIP 用户：检查是否需要刷新当月额度（懒加载）
+      if (isVip && (!user.vipRefreshAt || now >= user.vipRefreshAt)) {
+        const nextRefresh = new Date(now);
+        nextRefresh.setMonth(nextRefresh.getMonth() + 1);
+        nextRefresh.setDate(1);
+        nextRefresh.setHours(0, 0, 0, 0);
+
+        await tx.user.update({
+          where: { id: user.id },
+          data: { vipCredits: 20, vipRefreshAt: nextRefresh },
+        });
+        // 刷新后当前额度为 20
+        user.vipCredits = 20;
+      }
+
+      // 扣费优先级：VIP 专属额度 > 基础积分
+      if (isVip && user.vipCredits > 0) {
+        await tx.user.update({
+          where: { id: user.id },
+          data: { vipCredits: { decrement: 1 } },
+        });
+      } else if (user.credits > 0) {
+        await tx.user.update({
+          where: { id: user.id },
+          data: { credits: { decrement: 1 } },
+        });
+      } else {
+        throw new Error('INSUFFICIENT_CREDITS');
+      }
+
+      return tx.task.create({
         data: {
           userId: req.userId!,
           inputFileKey: req.file!.filename,
           status: 'PENDING',
         },
       });
-
-      await tx.user.update({
-        where: { id: req.userId },
-        data: { credits: { decrement: 1 } },
-      });
-
-      return newTask;
     });
 
     // 发布到消息队列（异步，不影响响应）
@@ -93,7 +119,11 @@ router.post('/', authMiddleware, upload.single('file'), async (req: AuthRequest,
         createdAt: task.createdAt,
       },
     });
-  } catch (err) {
+  } catch (err: any) {
+    if (err?.message === 'INSUFFICIENT_CREDITS') {
+      res.status(403).json({ error: '积分不足，请购买积分或开通会员' });
+      return;
+    }
     console.error('创建任务失败:', err);
     res.status(500).json({ error: '创建任务失败，请稍后重试' });
   }

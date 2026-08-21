@@ -14,7 +14,14 @@ model User {
   password  String
   name      String?
   role      Role     @default(USER)
+  status    UserStatus @default(ACTIVE)
   credits   Int      @default(0)
+
+  // VIP 订阅：会员到期时间、当月额度刷新时间、当月剩余专属额度
+  vipExpireAt  DateTime?
+  vipRefreshAt DateTime?
+  vipCredits   Int       @default(0)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -53,6 +60,12 @@ model Payment {
 enum Role {
   USER
   ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  BANNED
+  CANCELLED
 }
 
 enum TaskStatus {

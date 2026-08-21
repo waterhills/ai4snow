@@ -66,6 +66,12 @@ def main():
             print(f"  {rel}")
             scp.put(full_local, full_remote)
 
+    # 上传 prisma/schema.prisma
+    print("\n=== Upload schema.prisma ===")
+    schema_local = os.path.join(LOCAL_DIR, "server", "prisma", "schema.prisma")
+    schema_remote = f"{REMOTE_DIR}/server/prisma/schema.prisma"
+    scp.put(schema_local, schema_remote)
+
     # 上传 server/dist (只更新变化文件)
     print("\n=== Upload server/dist ===")
     server_dist = os.path.join(LOCAL_DIR, "server", "dist")

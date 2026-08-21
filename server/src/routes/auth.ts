@@ -173,6 +173,16 @@ router.post('/login', async (req, res) => {
       return;
     }
 
+    // 账号状态检查：封禁和注销的用户不允许登录
+    if (user.status === 'BANNED') {
+      res.status(403).json({ error: '该账号已被封禁，请联系管理员' });
+      return;
+    }
+    if (user.status === 'CANCELLED') {
+      res.status(403).json({ error: '该账号已注销' });
+      return;
+    }
+
     const valid = await bcrypt.compare(data.password, user.password);
     if (!valid) {
       res.status(400).json({ error: '密码错误' });

@@ -33,10 +33,18 @@ export const authApi = {
 // 管理后台接口
 export const adminApi = {
   getStats: () => api.get('/admin/dashboard/stats'),
+  getTrends: () => api.get('/admin/dashboard/trends'),
+  getSystemStats: () => api.get('/admin/system/stats'),
   getUsers: (params?: { page?: number; limit?: number; search?: string }) =>
     api.get('/admin/users', { params }),
+  updateUser: (userId: string, data: { name?: string; vipExpireAt?: string | null; vipCredits?: number }) =>
+    api.put(`/admin/users/${userId}`, data),
   updateCredits: (userId: string, credits: number, remark?: string) =>
     api.patch(`/admin/users/${userId}/credits`, { credits, remark }),
+  banUser: (userId: string) =>
+    api.patch(`/admin/users/${userId}/ban`),
+  cancelUser: (userId: string) =>
+    api.patch(`/admin/users/${userId}/cancel`),
   getTasks: (params?: { page?: number; limit?: number; status?: string }) =>
     api.get('/admin/tasks', { params }),
   retryTask: (taskId: string) =>

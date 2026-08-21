@@ -3,6 +3,7 @@ import { authMiddleware, AuthRequest } from '../middleware/auth';
 import { adminMiddleware } from '../middleware/admin';
 import { prisma } from '../lib/db';
 import { publishTask } from '../services/queue';
+import { getSystemStats } from '../services/monitor';
 
 const router = Router();
 
@@ -69,7 +70,11 @@ router.get('/users', async (req: AuthRequest, res) => {
           email: true,
           name: true,
           role: true,
+          status: true,
           credits: true,
+          vipCredits: true,
+          vipExpireAt: true,
+          vipRefreshAt: true,
           createdAt: true,
           _count: { select: { tasks: true } },
         },
@@ -132,6 +137,118 @@ router.patch('/users/:id/credits', async (req: AuthRequest, res) => {
   } catch (err) {
     console.error('调整积分失败:', err);
     res.status(500).json({ error: '调整积分失败' });
+  }
+});
+
+// 编辑用户信息（姓名、VIP 到期时间、VIP 专属额度）
+router.put('/users/:id', async (req: AuthRequest, res) => {
+  try {
+    const userId = req.params.id as string;
+    const { name, vipExpireAt, vipCredits } = req.body;
+
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      res.status(404).json({ error: '用户不存在' });
+      return;
+    }
+
+    const updateData: any = {};
+    if (name !== undefined) updateData.name = name;
+    if (vipCredits !== undefined) updateData.vipCredits = vipCredits;
+
+    if (vipExpireAt !== undefined) {
+      updateData.vipExpireAt = vipExpireAt ? new Date(vipExpireAt) : null;
+      // 首次开通 VIP 时，自动设置刷新时间并赠送当月额度
+      if (vipExpireAt && !user.vipExpireAt) {
+        const nextRefresh = new Date();
+        nextRefresh.setMonth(nextRefresh.getMonth() + 1);
+        nextRefresh.setDate(1);
+        nextRefresh.setHours(0, 0, 0, 0);
+        updateData.vipRefreshAt = nextRefresh;
+        updateData.vipCredits = 20;
+      }
+    }
+
+    const updated = await prisma.user.update({
+      where: { id: userId },
+      data: updateData,
+      select: { id: true, email: true, name: true, vipExpireAt: true, vipCredits: true, vipRefreshAt: true, status: true },
+    });
+
+    res.json({ user: updated });
+  } catch (err) {
+    console.error('编辑用户失败:', err);
+    res.status(500).json({ error: '编辑用户失败' });
+  }
+});
+
+// 封禁/解封用户
+router.patch('/users/:id/ban', async (req: AuthRequest, res) => {
+  try {
+    const userId = req.params.id as string;
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      res.status(404).json({ error: '用户不存在' });
+      return;
+    }
+    if (user.role === 'ADMIN') {
+      res.status(400).json({ error: '不能封禁管理员账号' });
+      return;
+    }
+    if (user.status === 'CANCELLED') {
+      res.status(400).json({ error: '该账号已注销，无法操作' });
+      return;
+    }
+
+    const newStatus = user.status === 'BANNED' ? 'ACTIVE' : 'BANNED';
+    await prisma.user.update({ where: { id: userId }, data: { status: newStatus } });
+
+    res.json({ message: newStatus === 'BANNED' ? '已封禁' : '已解封', status: newStatus });
+  } catch (err) {
+    console.error('封禁操作失败:', err);
+    res.status(500).json({ error: '操作失败' });
+  }
+});
+
+// 注销用户（软删除 + 隐私匿名化，不可逆）
+router.patch('/users/:id/cancel', async (req: AuthRequest, res) => {
+  try {
+    const userId = req.params.id as string;
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      res.status(404).json({ error: '用户不存在' });
+      return;
+    }
+    if (user.role === 'ADMIN') {
+      res.status(400).json({ error: '不能注销管理员账号' });
+      return;
+    }
+    if (user.status === 'CANCELLED') {
+      res.status(400).json({ error: '该账号已经是注销状态' });
+      return;
+    }
+
+    // 匿名化处理：替换邮箱为随机值（释放原邮箱供重新注册），清空密码和姓名
+    const anonymizedEmail = `deleted_${user.id.slice(0, 8)}_${Date.now()}@skate.local`;
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        status: 'CANCELLED',
+        email: anonymizedEmail,
+        password: 'CANCELLED_ACCOUNT_NO_ACCESS',
+        name: null,
+        phone: null,
+        credits: 0,
+        vipCredits: 0,
+        vipExpireAt: null,
+        vipRefreshAt: null,
+      },
+    });
+
+    res.json({ message: '账号已注销，用户数据已匿名化处理' });
+  } catch (err) {
+    console.error('注销用户失败:', err);
+    res.status(500).json({ error: '注销失败' });
   }
 });
 
@@ -258,6 +375,51 @@ router.post('/payments/manual', async (req: AuthRequest, res) => {
   } catch (err) {
     console.error('手动充值失败:', err);
     res.status(500).json({ error: '手动充值失败' });
+  }
+});
+
+// ===== 系统监控 =====
+router.get('/system/stats', async (_req, res) => {
+  try {
+    const stats = await getSystemStats();
+    res.json(stats);
+  } catch (err) {
+    console.error('获取系统状态失败:', err);
+    res.status(500).json({ error: '获取系统状态失败' });
+  }
+});
+
+// 最近 7 天的任务趋势数据（按天聚合）
+router.get('/dashboard/trends', async (_req, res) => {
+  try {
+    const days = 7;
+    const trends: Array<{ date: string; completed: number; failed: number; total: number }> = [];
+
+    for (let i = days - 1; i >= 0; i--) {
+      const start = new Date();
+      start.setDate(start.getDate() - i);
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(start);
+      end.setDate(end.getDate() + 1);
+
+      const [completed, failed, total] = await Promise.all([
+        prisma.task.count({ where: { status: 'COMPLETED', createdAt: { gte: start, lt: end } } }),
+        prisma.task.count({ where: { status: 'FAILED', createdAt: { gte: start, lt: end } } }),
+        prisma.task.count({ where: { createdAt: { gte: start, lt: end } } }),
+      ]);
+
+      trends.push({
+        date: start.toISOString().slice(0, 10),
+        completed,
+        failed,
+        total,
+      });
+    }
+
+    res.json({ trends });
+  } catch (err) {
+    console.error('获取趋势数据失败:', err);
+    res.status(500).json({ error: '获取趋势数据失败' });
   }
 });
 
