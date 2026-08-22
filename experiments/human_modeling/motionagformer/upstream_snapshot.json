@@ -1,0 +1,24 @@
+{
+  "repository": "https://github.com/TaatiTeam/MotionAGFormer",
+  "commit": "4756fd1eb7cc73f0e991f091ff2280e030ab85f3",
+  "snapshot_scope": "minimal official files required for XS inference and contract audit",
+  "sha256": {
+    "README.md": "8d451e413d149554400855d88aa039844fdc5c90b9d22ff3bb6033120e2398c8",
+    "LICENSE": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+    "configs/h36m/MotionAGFormer-xsmall.yaml": "8a88a21cd57d029632bea8e56629c91a6357664a0df713281745ee3ed963ff0d",
+    "model/MotionAGFormer.py": "d3e0bbce1bf72c5a0228a09438ef32cc470a2b56f02a11fd3548b084b4985ca7",
+    "model/modules/attention.py": "d87c9324c27bcd8b1d0f7283ba1abf059e72309ffa90937678e36e9901a0ba95",
+    "model/modules/graph.py": "77f72396ba6ca0a4a5861d5a65cb317b1683d617c60ca82518e9fdb9462e8982",
+    "model/modules/mlp.py": "af3cdfa6b8c5905afd5b6eb430425a65b9d0898f44e1e8b3b74fd9cab0f69114",
+    "model/modules/tcn.py": "dd5a1acd0470814bcac3c96989dcde07da54104ff46cf76c84bf0b7e215edcc6",
+    "demo/lib/preprocess.py": "783d7df6e1d9b21c092e29ab82345a9097f57e097f5bbced5ae29e704e39a4f6",
+    "demo/lib/utils.py": "164ee9f62264d4e9ca655aed522b92a29bd9a4d16b0b3fe21322988daaea2e88",
+    "utils/data.py": "77142f34ab65d6600f284e3354e6a48c758e5de6e011ecac70565c39551ad70b"
+  },
+  "checkpoint": {
+    "source_file_id": "1Pab7cPvnWG8NOVd0nnL1iqAfYCUY4hDH",
+    "filename": "motionagformer-xs-h36m.pth.tr",
+    "bytes": 27809069,
+    "sha256": "7abb32ea4a4bc1f675e2580f7b5aeb7c3bf9add46cfe4a770b18fb0cfcf64597"
+  }
+}

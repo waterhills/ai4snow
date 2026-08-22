@@ -1,0 +1,279 @@
+{
+  "environment": {
+    "platform": "macOS-26.3.1-arm64-arm-64bit",
+    "machine": "arm64",
+    "python": "3.11.14",
+    "torch": "2.10.0",
+    "mps_built": true,
+    "mps_available": true
+  },
+  "checkpoint": {
+    "path": "/Users/bill_chlt/Documents/Obsidian Vault/01\u6ed1\u96ea\u9879\u76ee/worker/ai4snow/model/human_modeling/motionbert/upstream/checkpoint/pose3d/FT_MB_lite_MB_ft_h36m_global_lite/best_epoch.bin",
+    "bytes": 64099897,
+    "sha256": "9811155371db4ca5d20f31a36a232d41012e12e1333882888a564d741861148f"
+  },
+  "model": {
+    "parameters": 16001549,
+    "load_seconds": 0.18499162513762712,
+    "rss_mb_before_load": 194.453125,
+    "rss_mb_after_load": 319.0,
+    "rss_model_delta_mb": 124.546875
+  },
+  "benchmark_official_flip_tta": {
+    "cpu": [
+      {
+        "frames": 27,
+        "output_shape": [
+          1,
+          27,
+          17,
+          3
+        ],
+        "cold_seconds": 0.10717833391390741,
+        "steady_seconds_median": 0.10644454206340015,
+        "steady_seconds_min": 0.10570166702382267,
+        "steady_seconds_max": 0.11081262491643429,
+        "repeats": 5,
+        "finite": true,
+        "rss_mb_after": 330.484375,
+        "peak_rss_mb_during_benchmark": 330.140625
+      },
+      {
+        "frames": 81,
+        "output_shape": [
+          1,
+          81,
+          17,
+          3
+        ],
+        "cold_seconds": 0.2880261249374598,
+        "steady_seconds_median": 0.27279066713526845,
+        "steady_seconds_min": 0.2648483340162784,
+        "steady_seconds_max": 0.2756769589614123,
+        "repeats": 5,
+        "finite": true,
+        "rss_mb_after": 371.09375,
+        "peak_rss_mb_during_benchmark": 371.125
+      },
+      {
+        "frames": 243,
+        "output_shape": [
+          1,
+          243,
+          17,
+          3
+        ],
+        "cold_seconds": 0.8810368340928108,
+        "steady_seconds_median": 0.8794956668280065,
+        "steady_seconds_min": 0.874736457830295,
+        "steady_seconds_max": 0.8871518331579864,
+        "repeats": 5,
+        "finite": true,
+        "rss_mb_after": 499.0,
+        "peak_rss_mb_during_benchmark": 499.03125
+      }
+    ],
+    "mps": [
+      {
+        "frames": 27,
+        "output_shape": [
+          1,
+          27,
+          17,
+          3
+        ],
+        "cold_seconds": 0.12433620798401535,
+        "steady_seconds_median": 0.029570208163931966,
+        "steady_seconds_min": 0.02587895793840289,
+        "steady_seconds_max": 0.03714470914565027,
+        "repeats": 5,
+        "finite": true,
+        "rss_mb_after": 546.578125,
+        "peak_rss_mb_during_benchmark": 543.03125,
+        "mps_current_allocated_mb": 61.9443359375,
+        "mps_driver_allocated_mb": 122.71875,
+        "mps_recommended_max_mb": 12124.171875
+      },
+      {
+        "frames": 81,
+        "output_shape": [
+          1,
+          81,
+          17,
+          3
+        ],
+        "cold_seconds": 0.09839633293449879,
+        "steady_seconds_median": 0.07451079203747213,
+        "steady_seconds_min": 0.07307466678321362,
+        "steady_seconds_max": 0.07647208403795958,
+        "repeats": 5,
+        "finite": true,
+        "rss_mb_after": 551.25,
+        "peak_rss_mb_during_benchmark": 549.53125,
+        "mps_current_allocated_mb": 62.487548828125,
+        "mps_driver_allocated_mb": 122.71875,
+        "mps_recommended_max_mb": 12124.171875
+      },
+      {
+        "frames": 243,
+        "output_shape": [
+          1,
+          243,
+          17,
+          3
+        ],
+        "cold_seconds": 0.40291270916350186,
+        "steady_seconds_median": 0.27289258292876184,
+        "steady_seconds_min": 0.255958957830444,
+        "steady_seconds_max": 0.2897833329625428,
+        "repeats": 5,
+        "finite": true,
+        "rss_mb_after": 246.46875,
+        "peak_rss_mb_during_benchmark": 556.875,
+        "mps_current_allocated_mb": 61.1845703125,
+        "mps_driver_allocated_mb": 1138.703125,
+        "mps_recommended_max_mb": 12124.171875
+      }
+    ]
+  },
+  "cpu_mps_numerical_consistency": {
+    "frames": 81,
+    "max_abs": 8.344650268554688e-07,
+    "mean_abs": 7.510549693279245e-08
+  },
+  "long_sequence": {
+    "cpu": {
+      "frames": 900,
+      "seconds": 8.77184445806779,
+      "window": 243,
+      "stride": 81,
+      "overlap": 162,
+      "window_count": 10,
+      "window_lengths": [
+        243,
+        243,
+        243,
+        243,
+        243,
+        243,
+        243,
+        243,
+        243,
+        171
+      ],
+      "coverage_last_frame": true,
+      "finite": true
+    },
+    "mps": {
+      "frames": 900,
+      "seconds": 4.219836458796635,
+      "window": 243,
+      "stride": 81,
+      "overlap": 162,
+      "window_count": 10,
+      "window_lengths": [
+        243,
+        243,
+        243,
+        243,
+        243,
+        243,
+        243,
+        243,
+        243,
+        171
+      ],
+      "coverage_last_frame": true,
+      "finite": true
+    }
+  },
+  "smoke_test": {
+    "input_source": "deterministic synthetic COCO17; no RGB/detector/2D pose",
+    "packed_input_shape": [
+      1,
+      900,
+      17,
+      3
+    ],
+    "packed_channel_meaning": [
+      "x_normalized",
+      "y_normalized",
+      "confidence"
+    ],
+    "raw_model_output_shape": [
+      900,
+      17,
+      3
+    ],
+    "pose3d_joints_shape": [
+      900,
+      17,
+      3
+    ],
+    "pose3d_confidence_shape": [
+      900,
+      17
+    ],
+    "pose3d_root_shape": [
+      900,
+      3
+    ],
+    "timestamps_shape": [
+      900
+    ],
+    "source_frame_index_shape": [
+      900
+    ],
+    "pelvis_relative_zero_max_abs": 0.0,
+    "normalization_center_xy_px": [
+      959.9996948242188,
+      622.5
+    ],
+    "normalization_scale_px": 811.0,
+    "output_scale_normalized_unit_px": 405.5,
+    "coordinate_convention": "MotionBERT native normalized camera/image proxy: x right, y down, z H36M image-depth; joints_3d is pelvis-relative per frame",
+    "window_slices": [
+      [
+        0,
+        243
+      ],
+      [
+        81,
+        324
+      ],
+      [
+        162,
+        405
+      ],
+      [
+        243,
+        486
+      ],
+      [
+        324,
+        567
+      ],
+      [
+        405,
+        648
+      ],
+      [
+        486,
+        729
+      ],
+      [
+        567,
+        810
+      ],
+      [
+        648,
+        891
+      ],
+      [
+        729,
+        900
+      ]
+    ],
+    "finite": true
+  }
+}

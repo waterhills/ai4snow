@@ -1,0 +1,18 @@
+{
+  "exporter": "torch.onnx.export legacy TorchScript path",
+  "torch": "2.10.0",
+  "onnx": "1.22.0",
+  "onnxruntime": "1.29.0",
+  "opset": 17,
+  "bytes": 64277093,
+  "input": ["batch", "frames", 17, 3],
+  "output": ["batch", "frames", 17, 3],
+  "onnx_checker": "PASS",
+  "onnxruntime_cpu": {
+    "frames_tested": [1, 27, 81, 243],
+    "all_shapes_correct": true,
+    "all_finite": true
+  },
+  "scope": "DSTformer forward only; excludes adapter, flip TTA, and sliding-window blending",
+  "artifact_retained": false
+}
